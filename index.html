@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HÁBITOS — Daily System</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Playfair+Display:wght@400;900&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ─── TOKENS ─────────────────────────────────────────── */
+    :root {
+      --bg:       #080808;
+      --surface:  #111111;
+      --border:   #222222;
+      --lime:     #b8ff00;
+      --lime-dim: #7aaa00;
+      --red:      #ff3838;
+      --text:     #f0ece4;
+      --muted:    #555555;
+      --mono:     'Space Mono', monospace;
+      --display:  'Bebas Neue', sans-serif;
+      --serif:    'Playfair Display', serif;
+    }
+
+    /* ─── RESET ──────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--mono);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    button { cursor: pointer; border: none; background: none; font-family: inherit; color: inherit; }
+    input  { font-family: inherit; color: inherit; }
+
+    /* ─── NOISE OVERLAY ──────────────────────────────────── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+      background-size: 256px 256px;
+      pointer-events: none;
+      z-index: 1000;
+      opacity: 0.5;
+    }
+
+    /* ─── LAYOUT ─────────────────────────────────────────── */
+    .app {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 6rem;
+    }
+
+    /* ─── HEADER ─────────────────────────────────────────── */
+    header {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: end;
+      border-bottom: 2px solid var(--lime);
+      padding-bottom: 1rem;
+      margin-bottom: 3rem;
+      animation: fadeDown 0.6s ease both;
+    }
+    .header-left .eyebrow {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      letter-spacing: 0.2em;
+      color: var(--lime);
+      text-transform: uppercase;
+      margin-bottom: 0.25rem;
+    }
+    .header-left h1 {
+      font-family: var(--display);
+      font-size: clamp(4rem, 12vw, 7rem);
+      line-height: 0.9;
+      letter-spacing: 0.02em;
+      color: var(--text);
+    }
+    .header-right {
+      text-align: right;
+      padding-bottom: 0.4rem;
+    }
+    .date-display {
+      font-family: var(--display);
+      font-size: clamp(1.2rem, 3vw, 1.8rem);
+      color: var(--muted);
+      letter-spacing: 0.05em;
+    }
+    .day-display {
+      font-size: 0.65rem;
+      letter-spacing: 0.15em;
+      color: var(--lime);
+      text-transform: uppercase;
+    }
+
+    /* ─── STATS ROW ──────────────────────────────────────── */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      margin-bottom: 3rem;
+      animation: fadeUp 0.6s 0.1s ease both;
+    }
+    .stat-card {
+      background: var(--surface);
+      padding: 1.5rem 1.25rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .stat-card::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0;
+      width: 100%; height: 2px;
+      background: var(--lime);
+      transform: scaleX(0);
+      transform-origin: left;
+      transition: transform 0.4s ease;
+    }
+    .stat-card:hover::after { transform: scaleX(1); }
+    .stat-label {
+      font-size: 0.6rem;
+      letter-spacing: 0.2em;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-bottom: 0.5rem;
+    }
+    .stat-value {
+      font-family: var(--display);
+      font-size: clamp(2.5rem, 6vw, 4rem);
+      line-height: 1;
+      color: var(--lime);
+    }
+    .stat-unit {
+      font-size: 0.65rem;
+      color: var(--muted);
+      margin-top: 0.25rem;
+      letter-spacing: 0.1em;
+    }
+
+    /* ─── SECTION TITLE ──────────────────────────────────── */
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1.25rem;
+    }
+    .section-title {
+      font-family: var(--display);
+      font-size: 1.6rem;
+      letter-spacing: 0.05em;
+      color: var(--text);
+    }
+    .section-count {
+      font-size: 0.6rem;
+      letter-spacing: 0.15em;
+      color: var(--muted);
+      border: 1px solid var(--border);
+      padding: 0.2rem 0.5rem;
+    }
+
+    /* ─── HABIT LIST ─────────────────────────────────────── */
+    .habit-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      margin-bottom: 2rem;
+      animation: fadeUp 0.6s 0.2s ease both;
+    }
+
+    .habit-item {
+      background: var(--surface);
+      display: grid;
+      grid-template-columns: 56px 1fr auto auto;
+      align-items: center;
+      gap: 0;
+      transition: background 0.2s;
+      position: relative;
+    }
+    .habit-item.completed { background: #0e130a; }
+    .habit-item.completed .habit-name { color: var(--muted); text-decoration: line-through; }
+
+    /* Checkbox column */
+    .habit-check {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      padding: 1.25rem 0;
+      border-right: 1px solid var(--border);
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .habit-check:hover { background: #1a1a1a; }
+
+    .check-box {
+      width: 20px; height: 20px;
+      border: 1.5px solid var(--muted);
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.2s;
+      flex-shrink: 0;
+    }
+    .completed .check-box {
+      border-color: var(--lime);
+      background: var(--lime);
+    }
+    .check-box svg { display: none; }
+    .completed .check-box svg { display: block; }
+
+    /* Name & meta */
+    .habit-body {
+      padding: 1.1rem 1.25rem;
+      min-width: 0;
+    }
+    .habit-name {
+      font-size: 0.95rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      transition: color 0.2s;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .habit-meta {
+      display: flex;
+      gap: 1rem;
+      margin-top: 0.3rem;
+    }
+    .habit-tag {
+      font-size: 0.55rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .habit-tag.lime { color: var(--lime); }
+
+    /* Streak */
+    .habit-streak {
+      padding: 0 1.25rem;
+      text-align: center;
+      border-left: 1px solid var(--border);
+    }
+    .streak-num {
+      font-family: var(--display);
+      font-size: 1.8rem;
+      line-height: 1;
+      color: var(--lime);
+    }
+    .streak-label {
+      font-size: 0.5rem;
+      letter-spacing: 0.15em;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+
+    /* Week dots */
+    .habit-week {
+      display: flex;
+      gap: 3px;
+      padding: 0 1.25rem;
+      border-left: 1px solid var(--border);
+    }
+    .week-dot {
+      width: 8px; height: 8px;
+      background: var(--border);
+      border-radius: 0;
+      transition: background 0.2s;
+    }
+    .week-dot.done { background: var(--lime); }
+    .week-dot.today { border: 1px solid var(--lime); }
+
+    /* Delete btn */
+    .habit-delete {
+      padding: 0 1rem;
+      opacity: 0;
+      transition: opacity 0.15s;
+      font-size: 0.8rem;
+      color: var(--muted);
+      height: 100%;
+      display: flex;
+      align-items: center;
+    }
+    .habit-item:hover .habit-delete { opacity: 1; }
+    .habit-delete:hover { color: var(--red); }
+
+    /* ─── EMPTY STATE ────────────────────────────────────── */
+    .empty-state {
+      background: var(--surface);
+      padding: 3rem;
+      text-align: center;
+      border: 1px dashed var(--border);
+    }
+    .empty-state p { color: var(--muted); font-size: 0.75rem; letter-spacing: 0.1em; }
+
+    /* ─── ADD HABIT ──────────────────────────────────────── */
+    .add-section {
+      animation: fadeUp 0.6s 0.3s ease both;
+    }
+    .add-form {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+    }
+    .add-input {
+      background: var(--surface);
+      border: none;
+      outline: none;
+      padding: 1.1rem 1.25rem;
+      font-size: 0.9rem;
+      letter-spacing: 0.03em;
+      caret-color: var(--lime);
+    }
+    .add-input::placeholder { color: var(--muted); }
+    .add-input:focus { background: #141414; }
+
+    .add-category {
+      background: var(--surface);
+      border: none;
+      outline: none;
+      padding: 1.1rem 1rem;
+      font-size: 0.65rem;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      appearance: none;
+      cursor: pointer;
+    }
+    .add-category:focus { outline: 1px solid var(--lime); }
+    option { background: var(--bg); }
+
+    .add-btn {
+      background: var(--lime);
+      color: var(--bg);
+      padding: 0 2rem;
+      font-family: var(--display);
+      font-size: 1.1rem;
+      letter-spacing: 0.05em;
+      transition: background 0.15s;
+    }
+    .add-btn:hover { background: #d4ff33; }
+    .add-btn:active { background: var(--lime-dim); }
+
+    /* ─── WEEKLY GRID ────────────────────────────────────── */
+    .weekly-section {
+      margin-top: 3rem;
+      animation: fadeUp 0.6s 0.4s ease both;
+    }
+    .week-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+    }
+    .week-col {
+      background: var(--surface);
+      padding: 0.75rem 0.5rem;
+      text-align: center;
+    }
+    .week-col-day {
+      font-size: 0.55rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 0.75rem;
+    }
+    .week-col.today-col .week-col-day { color: var(--lime); }
+    .week-col-bar-wrap {
+      height: 80px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      margin-bottom: 0.5rem;
+    }
+    .week-col-bar {
+      width: 100%;
+      background: var(--border);
+      position: relative;
+      height: 100%;
+      display: flex;
+      align-items: flex-end;
+    }
+    .week-col-bar-fill {
+      width: 100%;
+      background: var(--lime);
+      opacity: 0.3;
+      transition: height 0.5s ease;
+    }
+    .week-col.today-col .week-col-bar-fill { opacity: 1; }
+    .week-col-pct {
+      font-family: var(--display);
+      font-size: 1rem;
+      color: var(--lime);
+    }
+
+    /* ─── FOOTER ─────────────────────────────────────────── */
+    footer {
+      margin-top: 4rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    footer span {
+      font-size: 0.55rem;
+      letter-spacing: 0.15em;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+    .progress-bar-wrap {
+      flex: 1;
+      height: 2px;
+      background: var(--border);
+      margin: 0 2rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      background: var(--lime);
+      transition: width 0.4s ease;
+    }
+
+    /* ─── ANIMATIONS ─────────────────────────────────────── */
+    @keyframes fadeDown {
+      from { opacity: 0; transform: translateY(-16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes checkPop {
+      0%   { transform: scale(0.7); }
+      60%  { transform: scale(1.15); }
+      100% { transform: scale(1); }
+    }
+    .check-animate { animation: checkPop 0.25s ease; }
+
+    /* ─── TOAST ──────────────────────────────────────────── */
+    .toast {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      background: var(--lime);
+      color: var(--bg);
+      font-family: var(--display);
+      font-size: 1rem;
+      letter-spacing: 0.05em;
+      padding: 0.75rem 1.5rem;
+      z-index: 999;
+      transform: translateY(100px);
+      opacity: 0;
+      transition: all 0.3s ease;
+    }
+    .toast.show { transform: translateY(0); opacity: 1; }
+
+    /* ─── RESPONSIVE ─────────────────────────────────────── */
+    @media (max-width: 640px) {
+      .habit-week { display: none; }
+      .add-form { grid-template-columns: 1fr auto; }
+      .add-category { display: none; }
+      .stats-row { grid-template-columns: repeat(3, 1fr); }
+      .stat-value { font-size: 2rem; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- HEADER -->
+  <header>
+    <div class="header-left">
+      <p class="eyebrow">Daily Operating System</p>
+      <h1>HÁBITOS</h1>
+    </div>
+    <div class="header-right">
+      <p class="date-display" id="dateDisplay">—</p>
+      <p class="day-display" id="dayDisplay">—</p>
+    </div>
+  </header>
+
+  <!-- STATS -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <p class="stat-label">Completados hoy</p>
+      <p class="stat-value" id="statDone">0</p>
+      <p class="stat-unit">de <span id="statTotal">0</span> hábitos</p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-label">Racha más larga</p>
+      <p class="stat-value" id="statStreak">0</p>
+      <p class="stat-unit">días consecutivos</p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-label">Tasa semanal</p>
+      <p class="stat-value" id="statRate">0%</p>
+      <p class="stat-unit">últimos 7 días</p>
+    </div>
+  </div>
+
+  <!-- HABIT LIST -->
+  <div class="section-header">
+    <h2 class="section-title">HOY</h2>
+    <span class="section-count" id="sectionCount">0 HÁBITOS</span>
+  </div>
+
+  <div class="habit-list" id="habitList"></div>
+
+  <!-- ADD HABIT -->
+  <div class="add-section">
+    <div class="add-form">
+      <input
+        class="add-input"
+        id="addInput"
+        type="text"
+        placeholder="Agregar nuevo hábito..."
+        maxlength="60"
+      />
+      <select class="add-category" id="addCategory">
+        <option value="salud">SALUD</option>
+        <option value="mente">MENTE</option>
+        <option value="cuerpo">CUERPO</option>
+        <option value="trabajo">TRABAJO</option>
+        <option value="social">SOCIAL</option>
+        <option value="otro">OTRO</option>
+      </select>
+      <button class="add-btn" id="addBtn">AGREGAR</button>
+    </div>
+  </div>
+
+  <!-- WEEKLY OVERVIEW -->
+  <div class="weekly-section">
+    <div class="section-header" style="margin-bottom:1.25rem">
+      <h2 class="section-title">SEMANA</h2>
+    </div>
+    <div class="week-grid" id="weekGrid"></div>
+  </div>
+
+  <!-- FOOTER PROGRESS -->
+  <footer>
+    <span>Progreso de hoy</span>
+    <div class="progress-bar-wrap">
+      <div class="progress-bar-fill" id="progressFill" style="width:0%"></div>
+    </div>
+    <span id="progressLabel">0 / 0</span>
+  </footer>
+
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+/* ─── STATE ──────────────────────────────────────────────── */
+const DAYS_ES   = ['DOM','LUN','MAR','MIÉ','JUE','VIE','SÁB'];
+const MONTHS_ES = ['ENE','FEB','MAR','ABR','MAY','JUN','JUL','AGO','SEP','OCT','NOV','DIC'];
+
+function todayKey() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function loadState() {
+  try { return JSON.parse(localStorage.getItem('habitos_v1')) || { habits: [], log: {} }; }
+  catch { return { habits: [], log: {} }; }
+}
+
+function saveState(state) {
+  localStorage.setItem('habitos_v1', JSON.stringify(state));
+}
+
+let state = loadState();
+
+// Seed default habits if empty
+if (state.habits.length === 0) {
+  const seeds = [
+    { id: uid(), name: 'Meditar 10 minutos', category: 'mente' },
+    { id: uid(), name: 'Ejercicio 30 min',   category: 'cuerpo' },
+    { id: uid(), name: 'Leer 20 páginas',    category: 'mente' },
+    { id: uid(), name: 'Beber 2L de agua',   category: 'salud' },
+    { id: uid(), name: 'Sin redes sociales antes del mediodía', category: 'trabajo' },
+  ];
+  seeds.forEach(h => { state.habits.push(h); });
+  saveState(state);
+}
+
+function uid() {
+  return Math.random().toString(36).slice(2, 10);
+}
+
+/* ─── DATE HELPERS ───────────────────────────────────────── */
+function dateKey(offset = 0) {
+  const d = new Date();
+  d.setDate(d.getDate() + offset);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function getStreak(habitId) {
+  let streak = 0;
+  let offset = 0;
+  // If completed today, start counting from today, else from yesterday
+  const todayDone = (state.log[dateKey(0)] || []).includes(habitId);
+  if (!todayDone) offset = -1;
+  while (true) {
+    const key = dateKey(offset - streak);
+    const done = (state.log[key] || []).includes(habitId);
+    if (!done) break;
+    streak++;
+  }
+  return streak;
+}
+
+function getWeeklyRate() {
+  const keys = Array.from({ length: 7 }, (_, i) => dateKey(i - 6));
+  const total = keys.length * state.habits.length;
+  if (total === 0) return 0;
+  const done = keys.reduce((acc, k) => acc + (state.log[k] || []).length, 0);
+  return Math.round((done / total) * 100);
+}
+
+function getLongestStreak() {
+  return state.habits.reduce((max, h) => Math.max(max, getStreak(h.id)), 0);
+}
+
+/* ─── RENDER ─────────────────────────────────────────────── */
+function render() {
+  updateHeader();
+  renderHabits();
+  renderWeekGrid();
+  updateStats();
+}
+
+function updateHeader() {
+  const now = new Date();
+  document.getElementById('dateDisplay').textContent =
+    `${String(now.getDate()).padStart(2,'0')} ${MONTHS_ES[now.getMonth()]}`;
+  document.getElementById('dayDisplay').textContent =
+    DAYS_ES[now.getDay()];
+}
+
+function renderHabits() {
+  const list     = document.getElementById('habitList');
+  const today    = todayKey();
+  const doneset  = new Set(state.log[today] || []);
+
+  list.innerHTML = '';
+
+  if (state.habits.length === 0) {
+    list.innerHTML = `<div class="empty-state"><p>SIN HÁBITOS — AGREGA UNO ARRIBA</p></div>`;
+    document.getElementById('sectionCount').textContent = '0 HÁBITOS';
+    return;
+  }
+
+  document.getElementById('sectionCount').textContent =
+    `${state.habits.length} HÁBITO${state.habits.length !== 1 ? 'S' : ''}`;
+
+  // Sort: pending first, then completed
+  const sorted = [...state.habits].sort((a, b) => {
+    const ad = doneset.has(a.id) ? 1 : 0;
+    const bd = doneset.has(b.id) ? 1 : 0;
+    return ad - bd;
+  });
+
+  sorted.forEach(habit => {
+    const done   = doneset.has(habit.id);
+    const streak = getStreak(habit.id);
+    const weekDots = Array.from({ length: 7 }, (_, i) => {
+      const key  = dateKey(i - 6);
+      const isToday = i === 6;
+      const isDone  = (state.log[key] || []).includes(habit.id);
+      return `<div class="week-dot${isDone ? ' done' : ''}${isToday ? ' today' : ''}"></div>`;
+    }).join('');
+
+    const item = document.createElement('div');
+    item.className = `habit-item${done ? ' completed' : ''}`;
+    item.dataset.id = habit.id;
+    item.innerHTML = `
+      <div class="habit-check" data-id="${habit.id}">
+        <div class="check-box">
+          <svg width="12" height="10" viewBox="0 0 12 10" fill="none">
+            <path d="M1 5L4.5 8.5L11 1" stroke="#080808" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+      </div>
+      <div class="habit-body">
+        <p class="habit-name">${escHtml(habit.name)}</p>
+        <div class="habit-meta">
+          <span class="habit-tag lime">${habit.category.toUpperCase()}</span>
+          ${streak > 1 ? `<span class="habit-tag">🔥 ${streak} días</span>` : ''}
+        </div>
+      </div>
+      <div class="habit-streak">
+        <p class="streak-num">${streak}</p>
+        <p class="streak-label">racha</p>
+      </div>
+      <div class="habit-week">${weekDots}</div>
+      <button class="habit-delete" data-del="${habit.id}" title="Eliminar">✕</button>
+    `;
+    list.appendChild(item);
+  });
+}
+
+function renderWeekGrid() {
+  const grid = document.getElementById('weekGrid');
+  grid.innerHTML = '';
+  const todayIdx = new Date().getDay(); // 0=sun
+
+  for (let i = 6; i >= 0; i--) {
+    const d    = new Date(); d.setDate(d.getDate() - i);
+    const key  = dateKey(-i);
+    const done = (state.log[key] || []).length;
+    const total = state.habits.length;
+    const pct  = total ? Math.round((done / total) * 100) : 0;
+    const isToday = i === 0;
+
+    const col = document.createElement('div');
+    col.className = `week-col${isToday ? ' today-col' : ''}`;
+    col.innerHTML = `
+      <p class="week-col-day">${DAYS_ES[d.getDay()]}</p>
+      <div class="week-col-bar-wrap">
+        <div class="week-col-bar">
+          <div class="week-col-bar-fill" style="height:${pct}%"></div>
+        </div>
+      </div>
+      <p class="week-col-pct">${pct}%</p>
+    `;
+    grid.appendChild(col);
+  }
+}
+
+function updateStats() {
+  const today   = todayKey();
+  const done    = (state.log[today] || []).length;
+  const total   = state.habits.length;
+  const pct     = total ? Math.round((done / total) * 100) : 0;
+
+  document.getElementById('statDone').textContent    = done;
+  document.getElementById('statTotal').textContent   = total;
+  document.getElementById('statStreak').textContent  = getLongestStreak();
+  document.getElementById('statRate').textContent    = `${getWeeklyRate()}%`;
+  document.getElementById('progressFill').style.width = `${pct}%`;
+  document.getElementById('progressLabel').textContent = `${done} / ${total}`;
+}
+
+/* ─── INTERACTIONS ───────────────────────────────────────── */
+document.getElementById('habitList').addEventListener('click', e => {
+  // Toggle
+  const checkEl = e.target.closest('[data-id]');
+  if (checkEl && !e.target.closest('[data-del]')) {
+    toggleHabit(checkEl.dataset.id);
+    return;
+  }
+  // Delete
+  const delEl = e.target.closest('[data-del]');
+  if (delEl) {
+    deleteHabit(delEl.dataset.del);
+  }
+});
+
+function toggleHabit(id) {
+  const today = todayKey();
+  if (!state.log[today]) state.log[today] = [];
+  const idx = state.log[today].indexOf(id);
+  if (idx === -1) {
+    state.log[today].push(id);
+    showToast('¡Hábito completado!');
+  } else {
+    state.log[today].splice(idx, 1);
+  }
+  saveState(state);
+  render();
+
+  // Animate check
+  setTimeout(() => {
+    const box = document.querySelector(`.habit-check[data-id="${id}"] .check-box`);
+    if (box) { box.classList.add('check-animate'); box.addEventListener('animationend', () => box.classList.remove('check-animate'), { once: true }); }
+  }, 10);
+}
+
+function deleteHabit(id) {
+  state.habits = state.habits.filter(h => h.id !== id);
+  Object.keys(state.log).forEach(k => {
+    state.log[k] = (state.log[k] || []).filter(x => x !== id);
+  });
+  saveState(state);
+  render();
+}
+
+// Add habit
+document.getElementById('addBtn').addEventListener('click', addHabit);
+document.getElementById('addInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') addHabit();
+});
+
+function addHabit() {
+  const input = document.getElementById('addInput');
+  const name  = input.value.trim();
+  if (!name) { input.focus(); return; }
+  const category = document.getElementById('addCategory').value;
+  state.habits.push({ id: uid(), name, category });
+  saveState(state);
+  input.value = '';
+  render();
+  showToast('Hábito agregado');
+}
+
+/* ─── TOAST ──────────────────────────────────────────────── */
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+/* ─── UTILS ──────────────────────────────────────────────── */
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* ─── BOOT ───────────────────────────────────────────────── */
+render();
+</script>
+</body>
+</html>
