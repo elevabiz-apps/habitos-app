@@ -15,6 +15,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Playfair+Display:wght@400;900&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 
   <style>
     /* ─── TOKENS ─────────────────────────────────────────── */
@@ -188,8 +189,8 @@
     .habit-item {
       background: var(--surface);
       display: grid;
-      grid-template-columns: 56px 1fr auto auto;
-      align-items: center;
+      grid-template-columns: 56px 1fr auto auto auto;
+      align-items: stretch;
       gap: 0;
       transition: background 0.2s;
       position: relative;
@@ -202,13 +203,19 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      border-right: 1px solid var(--border);
+    }
+    .habit-check-inner {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
       height: 100%;
       padding: 1.25rem 0;
-      border-right: 1px solid var(--border);
       cursor: pointer;
       transition: background 0.15s;
     }
-    .habit-check:hover { background: #1a1a1a; }
+    .habit-check-inner:hover { background: #1a1a1a; }
 
     .check-box {
       width: 20px; height: 20px;
@@ -256,6 +263,11 @@
       padding: 0 1.25rem;
       text-align: center;
       border-left: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
     }
     .streak-num {
       font-family: var(--display);
@@ -276,6 +288,9 @@
       gap: 3px;
       padding: 0 1.25rem;
       border-left: 1px solid var(--border);
+      align-items: center;
+      justify-content: center;
+      height: 100%;
     }
     .week-dot {
       width: 8px; height: 8px;
@@ -288,17 +303,36 @@
 
     /* Delete btn */
     .habit-delete {
-      padding: 0 1rem;
-      opacity: 0;
-      transition: opacity 0.15s;
-      font-size: 0.8rem;
-      color: var(--muted);
-      height: 100%;
+      font-size: 1.1rem;
+      color: var(--red);
       display: flex;
       align-items: center;
+      justify-content: center;
+      padding: 0 1.25rem;
+      height: 100%;
+      border-left: 1px solid var(--border);
+      opacity: 0.5;
+      transition: opacity 0.15s, background 0.15s;
+      position: relative;
     }
-    .habit-item:hover .habit-delete { opacity: 1; }
-    .habit-delete:hover { color: var(--red); }
+    .habit-delete:hover { opacity: 1; background: #1a1a1a; }
+    .habit-delete::after {
+      content: "Eliminar hábito";
+      position: absolute;
+      bottom: calc(100% + 6px);
+      right: 0;
+      background: #1a1a1a;
+      color: #ccc;
+      font-size: 0.7rem;
+      font-family: inherit;
+      white-space: nowrap;
+      padding: 4px 8px;
+      border: 1px solid var(--border);
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.15s;
+    }
+    .habit-delete:hover::after { opacity: 1; }
 
     /* ─── EMPTY STATE ────────────────────────────────────── */
     .empty-state {
@@ -657,6 +691,124 @@
       .stat-value { font-size: 2rem; }
       .habit-item { grid-template-columns: 56px 1fr auto; }
     }
+
+    /* ─── AUTH OVERLAY ───────────────────────────────────── */
+    .auth-overlay {
+      position: fixed;
+      inset: 0;
+      background: var(--bg);
+      z-index: 2000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+    .auth-overlay.show { display: flex; }
+
+    .auth-box {
+      width: 100%;
+      max-width: 420px;
+      border: 1px solid var(--border);
+      padding: 3rem 2.5rem;
+      background: var(--surface);
+    }
+    .auth-eyebrow {
+      font-size: 0.65rem;
+      letter-spacing: 0.2em;
+      color: var(--lime);
+      margin-bottom: 0.4rem;
+    }
+    .auth-heading {
+      font-family: var(--display);
+      font-size: 5rem;
+      line-height: 0.9;
+      margin-bottom: 2rem;
+    }
+    .auth-mode {
+      font-size: 0.65rem;
+      letter-spacing: 0.15em;
+      color: var(--muted);
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .auth-fields {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      background: var(--border);
+      margin-bottom: 0;
+    }
+    .auth-fields input {
+      background: var(--surface);
+      border: none;
+      outline: none;
+      padding: 0.85rem 1rem;
+      font-size: 0.8rem;
+      letter-spacing: 0.04em;
+      color: var(--text);
+      width: 100%;
+      font-family: var(--mono);
+    }
+    .auth-fields input::placeholder { color: var(--muted); }
+    .auth-fields input:focus { background: #161616; }
+    .auth-error {
+      font-size: 0.68rem;
+      color: var(--red);
+      min-height: 1.6rem;
+      padding: 0.4rem 0;
+      letter-spacing: 0.03em;
+    }
+    .auth-submit {
+      width: 100%;
+      background: var(--lime);
+      color: #080808;
+      padding: 0.9rem;
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      font-family: var(--mono);
+      transition: opacity 0.15s;
+    }
+    .auth-submit:hover { opacity: 0.85; }
+    .auth-submit:disabled { opacity: 0.4; cursor: default; }
+    .auth-switch {
+      display: block;
+      margin-top: 1.25rem;
+      font-size: 0.62rem;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      text-align: center;
+      transition: color 0.15s;
+      font-family: var(--mono);
+    }
+    .auth-switch:hover { color: var(--text); }
+
+    /* ─── USER BADGE ─────────────────────────────────────── */
+    .user-badge {
+      align-items: center;
+      gap: 0.75rem;
+      margin-top: 0.4rem;
+      justify-content: flex-end;
+    }
+    #userEmail {
+      font-size: 0.58rem;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+      max-width: 180px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    #logoutBtn {
+      font-size: 0.58rem;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      border: 1px solid var(--border);
+      padding: 0.25rem 0.55rem;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    #logoutBtn:hover { color: var(--text); border-color: var(--muted); }
   </style>
 </head>
 <body>
@@ -666,12 +818,15 @@
   <!-- HEADER -->
   <header>
     <div class="header-left">
-      <p class="eyebrow">Daily Operating System</p>
       <h1>HÁBITOS</h1>
     </div>
     <div class="header-right">
       <p class="date-display" id="dateDisplay">—</p>
       <p class="day-display" id="dayDisplay">—</p>
+      <div class="user-badge" id="userBadge" style="display:none">
+        <span id="userEmail"></span>
+        <button id="logoutBtn">SALIR</button>
+      </div>
     </div>
   </header>
 
@@ -787,14 +942,42 @@
   </div>
 </div>
 
+<!-- AUTH OVERLAY -->
+<div class="auth-overlay" id="authOverlay">
+  <div class="auth-box">
+    <div class="auth-eyebrow">DAILY SYSTEM</div>
+    <h1 class="auth-heading">HÁBITOS</h1>
+    <p class="auth-mode" id="authMode">INICIAR SESIÓN</p>
+    <div class="auth-fields">
+      <input type="email" id="authEmail" placeholder="Email" autocomplete="email" />
+      <input type="password" id="authPassword" placeholder="Contraseña" autocomplete="current-password" />
+    </div>
+    <div class="auth-error" id="authError"></div>
+    <button class="auth-submit" id="authSubmit">ENTRAR</button>
+    <button class="auth-switch" id="authSwitch">¿Sin cuenta? REGISTRARSE →</button>
+  </div>
+</div>
+
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
 <script>
+/* ─── SUPABASE CONFIG ────────────────────────────────────── */
+const SUPABASE_URL = 'https://nqarrnmebcwiyrylmmso.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_lMiZDuoLPxnTM6D5ymdLUA_ixLTYwWw';
+
+const _configOk = SUPABASE_URL.startsWith('http') && SUPABASE_KEY.length > 10;
+const sb = _configOk
+  ? supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
+  : null;
+
 /* ─── STATE ──────────────────────────────────────────────── */
 const DAYS_ES   = ['DOM','LUN','MAR','MIÉ','JUE','VIE','SÁB'];
 const MONTHS_ES = ['ENE','FEB','MAR','ABR','MAY','JUN','JUL','AGO','SEP','OCT','NOV','DIC'];
 const MAX_STREAK_DAYS = 365;
+
+let currentUser = null;
+let state = { habits: [], log: {}, bestStreaks: {} };
 
 function uid() {
   return Math.random().toString(36).slice(2, 10);
@@ -805,43 +988,112 @@ function todayKey() {
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
 
-function loadState() {
-  try {
-    const s = JSON.parse(localStorage.getItem('habitos_v2')) || { habits: [], log: {}, bestStreaks: {} };
-    if (!s.bestStreaks) s.bestStreaks = {};
-    return s;
-  } catch { return { habits: [], log: {}, bestStreaks: {} }; }
+/* ─── AUTH UI ────────────────────────────────────────────── */
+let authMode = 'login';
+
+function showAuthPanel() {
+  const overlay = document.getElementById('authOverlay');
+  overlay.classList.add('show');
+  document.getElementById('userBadge').style.display = 'none';
+  document.getElementById('authError').textContent = '';
+  if (!_configOk) {
+    document.getElementById('authMode').textContent = 'CONFIGURACIÓN PENDIENTE';
+    document.getElementById('authSubmit').style.display = 'none';
+    document.getElementById('authSwitch').style.display = 'none';
+    document.querySelector('.auth-fields').style.display = 'none';
+    document.getElementById('authError').style.color = 'var(--muted)';
+    document.getElementById('authError').style.fontSize = '0.7rem';
+    document.getElementById('authError').style.lineHeight = '1.6';
+    document.getElementById('authError').textContent =
+      'Reemplaza SUPABASE_URL y SUPABASE_KEY en index.html con las credenciales de tu proyecto.\n\nVer instrucciones abajo ↓';
+  }
+}
+function hideAuthPanel() {
+  document.getElementById('authOverlay').classList.remove('show');
+}
+function updateAuthBadge(user) {
+  const badge = document.getElementById('userBadge');
+  badge.style.display = 'flex';
+  document.getElementById('userEmail').textContent = user.email;
 }
 
-function saveState(st) {
-  localStorage.setItem('habitos_v2', JSON.stringify(st));
-}
+document.getElementById('authSwitch').addEventListener('click', () => {
+  authMode = authMode === 'login' ? 'register' : 'login';
+  document.getElementById('authMode').textContent    = authMode === 'login' ? 'INICIAR SESIÓN' : 'REGISTRARSE';
+  document.getElementById('authSubmit').textContent  = authMode === 'login' ? 'ENTRAR' : 'CREAR CUENTA';
+  document.getElementById('authSwitch').textContent  = authMode === 'login' ? '¿Sin cuenta? REGISTRARSE →' : '¿Ya tienes cuenta? INICIAR SESIÓN →';
+  document.getElementById('authError').textContent   = '';
+  document.getElementById('authPassword').value      = '';
+});
 
-let state = loadState();
+document.getElementById('authSubmit').addEventListener('click', handleAuth);
+document.getElementById('authPassword').addEventListener('keydown', e => { if (e.key === 'Enter') handleAuth(); });
+document.getElementById('authEmail').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('authPassword').focus(); });
 
-// Migrate from v1 if exists
-if (state.habits.length === 0) {
+async function handleAuth() {
+  if (!sb) return;
+  const email    = document.getElementById('authEmail').value.trim();
+  const password = document.getElementById('authPassword').value;
+  const errEl    = document.getElementById('authError');
+  const btn      = document.getElementById('authSubmit');
+  if (!email || !password) { errEl.textContent = 'Completa todos los campos.'; return; }
+  btn.textContent = '...';
+  btn.disabled = true;
+  errEl.textContent = '';
   try {
-    const v1 = JSON.parse(localStorage.getItem('habitos_v1'));
-    if (v1 && v1.habits && v1.habits.length > 0) {
-      state.habits = v1.habits;
-      state.log = v1.log || {};
-      saveState(state);
+    if (authMode === 'login') {
+      const { error } = await sb.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+    } else {
+      const { error } = await sb.auth.signUp({ email, password });
+      if (error) throw error;
     }
-  } catch {}
+  } catch (err) {
+    errEl.textContent = translateAuthError(err.message);
+    btn.textContent = authMode === 'login' ? 'ENTRAR' : 'CREAR CUENTA';
+    btn.disabled = false;
+  }
 }
 
-// Seed default habits if still empty
-if (state.habits.length === 0) {
-  const seeds = [
-    { id: uid(), name: 'Meditar 10 minutos', category: 'mente' },
-    { id: uid(), name: 'Ejercicio 30 min',   category: 'cuerpo' },
-    { id: uid(), name: 'Leer 20 páginas',    category: 'mente' },
-    { id: uid(), name: 'Beber 2L de agua',   category: 'salud' },
-    { id: uid(), name: 'Sin redes sociales antes del mediodía', category: 'trabajo' },
-  ];
-  seeds.forEach(h => state.habits.push(h));
-  saveState(state);
+function translateAuthError(msg) {
+  if (msg.includes('Invalid login'))      return 'Email o contraseña incorrectos.';
+  if (msg.includes('already registered')) return 'Este email ya está registrado.';
+  if (msg.includes('Password should'))    return 'La contraseña debe tener al menos 6 caracteres.';
+  if (msg.includes('valid email'))        return 'Introduce un email válido.';
+  return msg;
+}
+
+document.getElementById('logoutBtn').addEventListener('click', async () => {
+  if (sb) await sb.auth.signOut();
+});
+
+/* ─── DATA ───────────────────────────────────────────────── */
+async function loadDataFromSupabase() {
+  const [{ data: habits }, { data: logs }, { data: streaks }] = await Promise.all([
+    sb.from('habits').select('*').order('created_at'),
+    sb.from('habit_logs').select('*'),
+    sb.from('best_streaks').select('*'),
+  ]);
+  state.habits = (habits || []).map(h => ({ id: h.id, name: h.name, category: h.category }));
+  state.log = {};
+  (logs || []).forEach(l => {
+    if (!state.log[l.date]) state.log[l.date] = [];
+    state.log[l.date].push(l.habit_id);
+  });
+  state.bestStreaks = {};
+  (streaks || []).forEach(s => { state.bestStreaks[s.habit_id] = s.streak; });
+
+  // Seed for new users
+  if (state.habits.length === 0) {
+    const seeds = [
+      { id: uid(), name: 'Meditar 10 minutos', category: 'mente' },
+      { id: uid(), name: 'Ejercicio 30 min',   category: 'cuerpo' },
+      { id: uid(), name: 'Leer 20 páginas',    category: 'mente' },
+      { id: uid(), name: 'Beber 2L de agua',   category: 'salud' },
+    ];
+    await sb.from('habits').insert(seeds.map(h => ({ ...h, user_id: currentUser.id })));
+    state.habits = seeds;
+  }
 }
 
 /* ─── DATE HELPERS ───────────────────────────────────────── */
@@ -860,28 +1112,9 @@ function getStreak(habitId) {
     if (!(state.log[key] || []).includes(habitId)) break;
     streak++;
   }
-  // Track best streak ever
-  const prev = state.bestStreaks[habitId] || 0;
-  if (streak > prev) {
-    state.bestStreaks[habitId] = streak;
-    saveState(state);
-  }
   return streak;
 }
 
-function getHabitCreatedOffset(habitId) {
-  // Find the earliest day this habit appears in the log, or 0 if today
-  const keys = Object.keys(state.log).sort();
-  const today = todayKey();
-  for (const k of keys) {
-    if ((state.log[k] || []).includes(habitId)) {
-      const d1 = new Date(k);
-      const d2 = new Date(today);
-      return Math.round((d2 - d1) / 86400000);
-    }
-  }
-  return 0; // assume created today
-}
 
 function getWeeklyRate() {
   if (state.habits.length === 0) return 0;
@@ -967,11 +1200,13 @@ function renderHabits() {
     item.className = `habit-item${done ? ' completed' : ''}`;
     item.dataset.id = habit.id;
     item.innerHTML = `
-      <div class="habit-check" data-id="${habit.id}">
-        <div class="check-box">
-          <svg width="12" height="10" viewBox="0 0 12 10" fill="none">
-            <path d="M1 5L4.5 8.5L11 1" stroke="#080808" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
+      <div class="habit-check">
+        <div class="habit-check-inner" data-id="${habit.id}">
+          <div class="check-box">
+            <svg width="12" height="10" viewBox="0 0 12 10" fill="none">
+              <path d="M1 5L4.5 8.5L11 1" stroke="#080808" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
         </div>
       </div>
       <div class="habit-body" data-edit-id="${habit.id}">
@@ -1064,7 +1299,7 @@ document.getElementById('habitList').addEventListener('click', e => {
 
   // Desktop edit (double-click handled separately)
   // Toggle check
-  const checkEl = e.target.closest('.habit-check[data-id]');
+  const checkEl = e.target.closest('.habit-check-inner[data-id]');
   if (checkEl) { toggleHabit(checkEl.dataset.id); return; }
 
   // Mobile: long-press alternative — tap habit body to expand actions
@@ -1088,22 +1323,28 @@ document.getElementById('habitList').addEventListener('dblclick', e => {
   }
 });
 
-function toggleHabit(id) {
+async function toggleHabit(id) {
   const today = todayKey();
   if (!state.log[today]) state.log[today] = [];
   const idx = state.log[today].indexOf(id);
   if (idx === -1) {
     state.log[today].push(id);
+    sb.from('habit_logs').upsert({ habit_id: id, date: today, user_id: currentUser.id });
     showToast('¡Hábito completado!');
   } else {
     state.log[today].splice(idx, 1);
+    sb.from('habit_logs').delete().eq('habit_id', id).eq('date', today).eq('user_id', currentUser.id);
   }
-  saveState(state);
+  // Persist best streak
+  const streak = getStreak(id);
+  const prev = state.bestStreaks[id] || 0;
+  if (streak > prev) {
+    state.bestStreaks[id] = streak;
+    sb.from('best_streaks').upsert({ habit_id: id, user_id: currentUser.id, streak });
+  }
   render();
-
-  // Animate check
   setTimeout(() => {
-    const box = document.querySelector(`.habit-check[data-id="${id}"] .check-box`);
+    const box = document.querySelector(`.habit-check-inner[data-id="${id}"] .check-box`);
     if (box) {
       box.classList.add('check-animate');
       box.addEventListener('animationend', () => box.classList.remove('check-animate'), { once: true });
@@ -1131,14 +1372,15 @@ document.getElementById('confirmCancel').addEventListener('click', closeConfirm)
 document.getElementById('confirmOverlay').addEventListener('click', e => {
   if (e.target === e.currentTarget) closeConfirm();
 });
-document.getElementById('confirmYes').addEventListener('click', () => {
+document.getElementById('confirmYes').addEventListener('click', async () => {
   if (pendingDeleteId) {
-    state.habits = state.habits.filter(h => h.id !== pendingDeleteId);
+    const id = pendingDeleteId;
+    state.habits = state.habits.filter(h => h.id !== id);
     Object.keys(state.log).forEach(k => {
-      state.log[k] = (state.log[k] || []).filter(x => x !== pendingDeleteId);
+      state.log[k] = (state.log[k] || []).filter(x => x !== id);
     });
-    delete state.bestStreaks[pendingDeleteId];
-    saveState(state);
+    delete state.bestStreaks[id];
+    sb.from('habits').delete().eq('id', id);
     render();
     showToast('Hábito eliminado');
   }
@@ -1173,7 +1415,7 @@ document.getElementById('editName').addEventListener('keydown', e => {
 });
 document.getElementById('editSave').addEventListener('click', saveEdit);
 
-function saveEdit() {
+async function saveEdit() {
   if (!editingId) return;
   const name = document.getElementById('editName').value.trim();
   if (!name) return;
@@ -1182,7 +1424,7 @@ function saveEdit() {
   if (habit) {
     habit.name = name;
     habit.category = category;
-    saveState(state);
+    sb.from('habits').update({ name, category }).eq('id', editingId);
     render();
     showToast('Hábito actualizado');
   }
@@ -1195,13 +1437,14 @@ document.getElementById('addInput').addEventListener('keydown', e => {
   if (e.key === 'Enter') addHabit();
 });
 
-function addHabit() {
+async function addHabit() {
   const input = document.getElementById('addInput');
   const name  = input.value.trim();
   if (!name) { input.focus(); return; }
   const category = document.getElementById('addCategory').value;
-  state.habits.push({ id: uid(), name, category });
-  saveState(state);
+  const id = uid();
+  state.habits.push({ id, name, category });
+  sb.from('habits').insert({ id, name, category, user_id: currentUser.id });
   input.value = '';
   render();
   showToast('Hábito agregado');
@@ -1248,9 +1491,33 @@ function escHtml(s) {
 }
 
 /* ─── BOOT ───────────────────────────────────────────────── */
-render();
+render(); // empty state while auth loads
 
-// Register service worker
+if (sb) {
+  sb.auth.onAuthStateChange(async (event, session) => {
+    if (session) {
+      currentUser = session.user;
+      updateAuthBadge(currentUser);
+      await loadDataFromSupabase();
+      hideAuthPanel();
+      render();
+      if (event === 'SIGNED_IN') showToast('Bienvenido/a');
+    } else {
+      currentUser = null;
+      state = { habits: [], log: {}, bestStreaks: {} };
+      document.getElementById('userBadge').style.display = 'none';
+      showAuthPanel();
+      render();
+    }
+  });
+
+  sb.auth.getSession().then(({ data: { session } }) => {
+    if (!session) showAuthPanel();
+  });
+} else {
+  showAuthPanel();
+}
+
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js').catch(() => {});
 }
