@@ -1045,13 +1045,25 @@ async function handleAuth() {
       const { error } = await sb.auth.signInWithPassword({ email, password });
       if (error) throw error;
     } else {
-      const { error } = await sb.auth.signUp({ email, password });
+      const { data, error } = await sb.auth.signUp({ email, password });
       if (error) throw error;
+      // If email confirmation is required, session will be null
+      if (!data.session) {
+        errEl.style.color = 'var(--lime)';
+        errEl.textContent = 'Cuenta creada. Revisá tu email para confirmar y luego iniciá sesión.';
+        btn.textContent = 'CREAR CUENTA';
+        btn.disabled = false;
+        return;
+      }
     }
   } catch (err) {
+    errEl.style.color = 'var(--red)';
     errEl.textContent = translateAuthError(err.message);
-    btn.textContent = authMode === 'login' ? 'ENTRAR' : 'CREAR CUENTA';
-    btn.disabled = false;
+  } finally {
+    if (btn.textContent === '...') {
+      btn.textContent = authMode === 'login' ? 'ENTRAR' : 'CREAR CUENTA';
+      btn.disabled = false;
+    }
   }
 }
 
@@ -1498,7 +1510,12 @@ if (sb) {
     if (session) {
       currentUser = session.user;
       updateAuthBadge(currentUser);
-      await loadDataFromSupabase();
+      try {
+        await loadDataFromSupabase();
+      } catch (err) {
+        console.error('Error cargando datos:', err);
+        showToast('Error al cargar datos — ¿creaste las tablas en Supabase?');
+      }
       hideAuthPanel();
       render();
       if (event === 'SIGNED_IN') showToast('Bienvenido/a');
