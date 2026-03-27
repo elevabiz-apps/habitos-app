@@ -4,6 +4,14 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>HÁBITOS — Daily System</title>
+  <!-- PWA -->
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#b8ff00" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23080808'/><text y='72' x='12' font-size='60' font-family='sans-serif' font-weight='900' fill='%23b8ff00'>H</text></svg>" />
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23080808'/><text y='72' x='12' font-size='60' font-family='sans-serif' font-weight='900' fill='%23b8ff00'>H</text></svg>" />
+
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Playfair+Display:wght@400;900&display=swap" rel="stylesheet" />
@@ -448,6 +456,179 @@
     }
     .check-animate { animation: checkPop 0.25s ease; }
 
+    /* ─── CONFIRM DIALOG ─────────────────────────────────── */
+    .confirm-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.75);
+      z-index: 900;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+    }
+    .confirm-overlay.show { opacity: 1; pointer-events: all; }
+    .confirm-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 2rem;
+      max-width: 360px;
+      width: 90%;
+      text-align: center;
+    }
+    .confirm-box p {
+      font-size: 0.8rem;
+      margin-bottom: 1.5rem;
+      line-height: 1.5;
+    }
+    .confirm-box .confirm-name {
+      color: var(--lime);
+      font-weight: 700;
+    }
+    .confirm-actions {
+      display: flex;
+      gap: 1px;
+      background: var(--border);
+    }
+    .confirm-actions button {
+      flex: 1;
+      padding: 0.75rem;
+      font-family: var(--display);
+      font-size: 1rem;
+      letter-spacing: 0.05em;
+      background: var(--surface);
+      transition: background 0.15s;
+    }
+    .confirm-actions button:hover { background: #1a1a1a; }
+    .confirm-actions .confirm-yes {
+      background: var(--red);
+      color: var(--bg);
+    }
+    .confirm-actions .confirm-yes:hover { background: #ff5555; }
+
+    /* ─── EDIT MODAL ─────────────────────────────────────── */
+    .edit-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.75);
+      z-index: 900;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+    }
+    .edit-overlay.show { opacity: 1; pointer-events: all; }
+    .edit-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 2rem;
+      max-width: 400px;
+      width: 90%;
+    }
+    .edit-box h3 {
+      font-family: var(--display);
+      font-size: 1.4rem;
+      letter-spacing: 0.05em;
+      margin-bottom: 1.25rem;
+    }
+    .edit-field {
+      margin-bottom: 1rem;
+    }
+    .edit-field label {
+      display: block;
+      font-size: 0.55rem;
+      letter-spacing: 0.2em;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-bottom: 0.4rem;
+    }
+    .edit-field input, .edit-field select {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      padding: 0.75rem 1rem;
+      font-size: 0.85rem;
+      color: var(--text);
+      outline: none;
+      font-family: var(--mono);
+    }
+    .edit-field input:focus, .edit-field select:focus {
+      border-color: var(--lime);
+    }
+    .edit-field select { appearance: none; cursor: pointer; }
+    .edit-actions {
+      display: flex;
+      gap: 1px;
+      background: var(--border);
+      margin-top: 1.5rem;
+    }
+    .edit-actions button {
+      flex: 1;
+      padding: 0.75rem;
+      font-family: var(--display);
+      font-size: 1rem;
+      letter-spacing: 0.05em;
+      background: var(--surface);
+      transition: background 0.15s;
+    }
+    .edit-actions button:hover { background: #1a1a1a; }
+    .edit-actions .edit-save {
+      background: var(--lime);
+      color: var(--bg);
+    }
+    .edit-actions .edit-save:hover { background: #d4ff33; }
+
+    /* ─── CELEBRATION ────────────────────────────────────── */
+    .celebration {
+      background: var(--surface);
+      border: 1px solid var(--lime);
+      padding: 2rem;
+      text-align: center;
+      margin-bottom: 2rem;
+      display: none;
+      animation: fadeUp 0.4s ease both;
+    }
+    .celebration.show { display: block; }
+    .celebration-icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
+    .celebration h3 {
+      font-family: var(--display);
+      font-size: 2rem;
+      color: var(--lime);
+      letter-spacing: 0.05em;
+    }
+    .celebration p {
+      font-size: 0.65rem;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+      margin-top: 0.5rem;
+    }
+
+    /* ─── SWIPE DELETE (mobile) ──────────────────────────── */
+    .habit-actions-mobile {
+      display: none;
+      gap: 1px;
+      background: var(--border);
+      border-top: 1px solid var(--border);
+    }
+    .habit-actions-mobile button {
+      flex: 1;
+      padding: 0.6rem;
+      font-size: 0.55rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      background: var(--surface);
+      transition: background 0.15s;
+    }
+    .habit-actions-mobile button:hover { background: #1a1a1a; }
+    .habit-actions-mobile .mob-del { color: var(--red); }
+    .habit-actions-mobile .mob-edit { color: var(--lime); }
+
+    .habit-item.expanded .habit-actions-mobile { display: flex; }
+
     /* ─── TOAST ──────────────────────────────────────────── */
     .toast {
       position: fixed;
@@ -469,10 +650,12 @@
     /* ─── RESPONSIVE ─────────────────────────────────────── */
     @media (max-width: 640px) {
       .habit-week { display: none; }
+      .habit-delete { display: none; }
       .add-form { grid-template-columns: 1fr auto; }
       .add-category { display: none; }
       .stats-row { grid-template-columns: repeat(3, 1fr); }
       .stat-value { font-size: 2rem; }
+      .habit-item { grid-template-columns: 56px 1fr auto; }
     }
   </style>
 </head>
@@ -509,6 +692,13 @@
       <p class="stat-value" id="statRate">0%</p>
       <p class="stat-unit">últimos 7 días</p>
     </div>
+  </div>
+
+  <!-- CELEBRATION -->
+  <div class="celebration" id="celebration">
+    <div class="celebration-icon">⚡</div>
+    <h3>MISIÓN CUMPLIDA</h3>
+    <p>Todos los hábitos del día completados</p>
   </div>
 
   <!-- HABIT LIST -->
@@ -560,6 +750,43 @@
 
 </div>
 
+<!-- CONFIRM DIALOG -->
+<div class="confirm-overlay" id="confirmOverlay">
+  <div class="confirm-box">
+    <p>¿Eliminar <span class="confirm-name" id="confirmName">—</span> y todo su historial?</p>
+    <div class="confirm-actions">
+      <button class="confirm-cancel" id="confirmCancel">CANCELAR</button>
+      <button class="confirm-yes" id="confirmYes">ELIMINAR</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT MODAL -->
+<div class="edit-overlay" id="editOverlay">
+  <div class="edit-box">
+    <h3>EDITAR HÁBITO</h3>
+    <div class="edit-field">
+      <label>Nombre</label>
+      <input type="text" id="editName" maxlength="60" />
+    </div>
+    <div class="edit-field">
+      <label>Categoría</label>
+      <select id="editCategory">
+        <option value="salud">SALUD</option>
+        <option value="mente">MENTE</option>
+        <option value="cuerpo">CUERPO</option>
+        <option value="trabajo">TRABAJO</option>
+        <option value="social">SOCIAL</option>
+        <option value="otro">OTRO</option>
+      </select>
+    </div>
+    <div class="edit-actions">
+      <button class="edit-cancel" id="editCancel">CANCELAR</button>
+      <button class="edit-save" id="editSave">GUARDAR</button>
+    </div>
+  </div>
+</div>
+
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
@@ -567,6 +794,11 @@
 /* ─── STATE ──────────────────────────────────────────────── */
 const DAYS_ES   = ['DOM','LUN','MAR','MIÉ','JUE','VIE','SÁB'];
 const MONTHS_ES = ['ENE','FEB','MAR','ABR','MAY','JUN','JUL','AGO','SEP','OCT','NOV','DIC'];
+const MAX_STREAK_DAYS = 365;
+
+function uid() {
+  return Math.random().toString(36).slice(2, 10);
+}
 
 function todayKey() {
   const d = new Date();
@@ -574,17 +806,32 @@ function todayKey() {
 }
 
 function loadState() {
-  try { return JSON.parse(localStorage.getItem('habitos_v1')) || { habits: [], log: {} }; }
-  catch { return { habits: [], log: {} }; }
+  try {
+    const s = JSON.parse(localStorage.getItem('habitos_v2')) || { habits: [], log: {}, bestStreaks: {} };
+    if (!s.bestStreaks) s.bestStreaks = {};
+    return s;
+  } catch { return { habits: [], log: {}, bestStreaks: {} }; }
 }
 
-function saveState(state) {
-  localStorage.setItem('habitos_v1', JSON.stringify(state));
+function saveState(st) {
+  localStorage.setItem('habitos_v2', JSON.stringify(st));
 }
 
 let state = loadState();
 
-// Seed default habits if empty
+// Migrate from v1 if exists
+if (state.habits.length === 0) {
+  try {
+    const v1 = JSON.parse(localStorage.getItem('habitos_v1'));
+    if (v1 && v1.habits && v1.habits.length > 0) {
+      state.habits = v1.habits;
+      state.log = v1.log || {};
+      saveState(state);
+    }
+  } catch {}
+}
+
+// Seed default habits if still empty
 if (state.habits.length === 0) {
   const seeds = [
     { id: uid(), name: 'Meditar 10 minutos', category: 'mente' },
@@ -593,12 +840,8 @@ if (state.habits.length === 0) {
     { id: uid(), name: 'Beber 2L de agua',   category: 'salud' },
     { id: uid(), name: 'Sin redes sociales antes del mediodía', category: 'trabajo' },
   ];
-  seeds.forEach(h => { state.habits.push(h); });
+  seeds.forEach(h => state.habits.push(h));
   saveState(state);
-}
-
-function uid() {
-  return Math.random().toString(36).slice(2, 10);
 }
 
 /* ─── DATE HELPERS ───────────────────────────────────────── */
@@ -610,37 +853,72 @@ function dateKey(offset = 0) {
 
 function getStreak(habitId) {
   let streak = 0;
-  let offset = 0;
-  // If completed today, start counting from today, else from yesterday
   const todayDone = (state.log[dateKey(0)] || []).includes(habitId);
-  if (!todayDone) offset = -1;
-  while (true) {
-    const key = dateKey(offset - streak);
-    const done = (state.log[key] || []).includes(habitId);
-    if (!done) break;
+  const startOffset = todayDone ? 0 : -1;
+  for (let i = 0; i < MAX_STREAK_DAYS; i++) {
+    const key = dateKey(startOffset - i);
+    if (!(state.log[key] || []).includes(habitId)) break;
     streak++;
+  }
+  // Track best streak ever
+  const prev = state.bestStreaks[habitId] || 0;
+  if (streak > prev) {
+    state.bestStreaks[habitId] = streak;
+    saveState(state);
   }
   return streak;
 }
 
+function getHabitCreatedOffset(habitId) {
+  // Find the earliest day this habit appears in the log, or 0 if today
+  const keys = Object.keys(state.log).sort();
+  const today = todayKey();
+  for (const k of keys) {
+    if ((state.log[k] || []).includes(habitId)) {
+      const d1 = new Date(k);
+      const d2 = new Date(today);
+      return Math.round((d2 - d1) / 86400000);
+    }
+  }
+  return 0; // assume created today
+}
+
 function getWeeklyRate() {
+  if (state.habits.length === 0) return 0;
   const keys = Array.from({ length: 7 }, (_, i) => dateKey(i - 6));
+  // For each day, count only habits that existed by then (use total habits as approx)
   const total = keys.length * state.habits.length;
   if (total === 0) return 0;
-  const done = keys.reduce((acc, k) => acc + (state.log[k] || []).length, 0);
+  let done = 0;
+  keys.forEach(k => {
+    const dayLog = state.log[k] || [];
+    // Only count completions for habits that still exist
+    const validDone = dayLog.filter(id => state.habits.some(h => h.id === id));
+    done += validDone.length;
+  });
   return Math.round((done / total) * 100);
 }
 
 function getLongestStreak() {
-  return state.habits.reduce((max, h) => Math.max(max, getStreak(h.id)), 0);
+  let max = 0;
+  state.habits.forEach(h => {
+    const current = getStreak(h.id);
+    const best = state.bestStreaks[h.id] || 0;
+    max = Math.max(max, current, best);
+  });
+  return max;
 }
 
 /* ─── RENDER ─────────────────────────────────────────────── */
+let lastRenderedDate = todayKey();
+
 function render() {
+  lastRenderedDate = todayKey();
   updateHeader();
   renderHabits();
   renderWeekGrid();
   updateStats();
+  updateCelebration();
 }
 
 function updateHeader() {
@@ -652,14 +930,15 @@ function updateHeader() {
 }
 
 function renderHabits() {
-  const list     = document.getElementById('habitList');
-  const today    = todayKey();
-  const doneset  = new Set(state.log[today] || []);
+  const list    = document.getElementById('habitList');
+  const today   = todayKey();
+  const doneset = new Set(state.log[today] || []);
+  const isMobile = window.innerWidth <= 640;
 
   list.innerHTML = '';
 
   if (state.habits.length === 0) {
-    list.innerHTML = `<div class="empty-state"><p>SIN HÁBITOS — AGREGA UNO ARRIBA</p></div>`;
+    list.innerHTML = `<div class="empty-state"><p>SIN HÁBITOS — AGREGA UNO ABAJO</p></div>`;
     document.getElementById('sectionCount').textContent = '0 HÁBITOS';
     return;
   }
@@ -678,7 +957,7 @@ function renderHabits() {
     const done   = doneset.has(habit.id);
     const streak = getStreak(habit.id);
     const weekDots = Array.from({ length: 7 }, (_, i) => {
-      const key  = dateKey(i - 6);
+      const key     = dateKey(i - 6);
       const isToday = i === 6;
       const isDone  = (state.log[key] || []).includes(habit.id);
       return `<div class="week-dot${isDone ? ' done' : ''}${isToday ? ' today' : ''}"></div>`;
@@ -695,7 +974,7 @@ function renderHabits() {
           </svg>
         </div>
       </div>
-      <div class="habit-body">
+      <div class="habit-body" data-edit-id="${habit.id}">
         <p class="habit-name">${escHtml(habit.name)}</p>
         <div class="habit-meta">
           <span class="habit-tag lime">${habit.category.toUpperCase()}</span>
@@ -708,6 +987,10 @@ function renderHabits() {
       </div>
       <div class="habit-week">${weekDots}</div>
       <button class="habit-delete" data-del="${habit.id}" title="Eliminar">✕</button>
+      <div class="habit-actions-mobile">
+        <button class="mob-edit" data-mob-edit="${habit.id}">EDITAR</button>
+        <button class="mob-del" data-mob-del="${habit.id}">ELIMINAR</button>
+      </div>
     `;
     list.appendChild(item);
   });
@@ -716,14 +999,14 @@ function renderHabits() {
 function renderWeekGrid() {
   const grid = document.getElementById('weekGrid');
   grid.innerHTML = '';
-  const todayIdx = new Date().getDay(); // 0=sun
 
   for (let i = 6; i >= 0; i--) {
-    const d    = new Date(); d.setDate(d.getDate() - i);
-    const key  = dateKey(-i);
-    const done = (state.log[key] || []).length;
+    const d     = new Date(); d.setDate(d.getDate() - i);
+    const key   = dateKey(-i);
+    const dayLog = (state.log[key] || []).filter(id => state.habits.some(h => h.id === id));
+    const done  = dayLog.length;
     const total = state.habits.length;
-    const pct  = total ? Math.round((done / total) * 100) : 0;
+    const pct   = total ? Math.round((done / total) * 100) : 0;
     const isToday = i === 0;
 
     const col = document.createElement('div');
@@ -742,10 +1025,10 @@ function renderWeekGrid() {
 }
 
 function updateStats() {
-  const today   = todayKey();
-  const done    = (state.log[today] || []).length;
-  const total   = state.habits.length;
-  const pct     = total ? Math.round((done / total) * 100) : 0;
+  const today = todayKey();
+  const done  = (state.log[today] || []).filter(id => state.habits.some(h => h.id === id)).length;
+  const total = state.habits.length;
+  const pct   = total ? Math.round((done / total) * 100) : 0;
 
   document.getElementById('statDone').textContent    = done;
   document.getElementById('statTotal').textContent   = total;
@@ -755,18 +1038,53 @@ function updateStats() {
   document.getElementById('progressLabel').textContent = `${done} / ${total}`;
 }
 
+function updateCelebration() {
+  const today = todayKey();
+  const done  = (state.log[today] || []).filter(id => state.habits.some(h => h.id === id)).length;
+  const total = state.habits.length;
+  const el    = document.getElementById('celebration');
+  if (total > 0 && done >= total) {
+    el.classList.add('show');
+  } else {
+    el.classList.remove('show');
+  }
+}
+
 /* ─── INTERACTIONS ───────────────────────────────────────── */
 document.getElementById('habitList').addEventListener('click', e => {
-  // Toggle
-  const checkEl = e.target.closest('[data-id]');
-  if (checkEl && !e.target.closest('[data-del]')) {
-    toggleHabit(checkEl.dataset.id);
+  // Mobile actions
+  const mobEdit = e.target.closest('[data-mob-edit]');
+  if (mobEdit) { openEditModal(mobEdit.dataset.mobEdit); return; }
+  const mobDel = e.target.closest('[data-mob-del]');
+  if (mobDel) { openConfirm(mobDel.dataset.mobDel); return; }
+
+  // Desktop delete
+  const delEl = e.target.closest('[data-del]');
+  if (delEl) { openConfirm(delEl.dataset.del); return; }
+
+  // Desktop edit (double-click handled separately)
+  // Toggle check
+  const checkEl = e.target.closest('.habit-check[data-id]');
+  if (checkEl) { toggleHabit(checkEl.dataset.id); return; }
+
+  // Mobile: long-press alternative — tap habit body to expand actions
+  const bodyEl = e.target.closest('.habit-body[data-edit-id]');
+  if (bodyEl && window.innerWidth <= 640) {
+    const item = bodyEl.closest('.habit-item');
+    // Close all others
+    document.querySelectorAll('.habit-item.expanded').forEach(el => {
+      if (el !== item) el.classList.remove('expanded');
+    });
+    item.classList.toggle('expanded');
     return;
   }
-  // Delete
-  const delEl = e.target.closest('[data-del]');
-  if (delEl) {
-    deleteHabit(delEl.dataset.del);
+});
+
+// Desktop: double-click habit name to edit
+document.getElementById('habitList').addEventListener('dblclick', e => {
+  const bodyEl = e.target.closest('.habit-body[data-edit-id]');
+  if (bodyEl) {
+    openEditModal(bodyEl.dataset.editId);
   }
 });
 
@@ -786,20 +1104,92 @@ function toggleHabit(id) {
   // Animate check
   setTimeout(() => {
     const box = document.querySelector(`.habit-check[data-id="${id}"] .check-box`);
-    if (box) { box.classList.add('check-animate'); box.addEventListener('animationend', () => box.classList.remove('check-animate'), { once: true }); }
+    if (box) {
+      box.classList.add('check-animate');
+      box.addEventListener('animationend', () => box.classList.remove('check-animate'), { once: true });
+    }
   }, 10);
 }
 
-function deleteHabit(id) {
-  state.habits = state.habits.filter(h => h.id !== id);
-  Object.keys(state.log).forEach(k => {
-    state.log[k] = (state.log[k] || []).filter(x => x !== id);
-  });
-  saveState(state);
-  render();
+/* ─── CONFIRM DELETE ─────────────────────────────────────── */
+let pendingDeleteId = null;
+
+function openConfirm(id) {
+  const habit = state.habits.find(h => h.id === id);
+  if (!habit) return;
+  pendingDeleteId = id;
+  document.getElementById('confirmName').textContent = habit.name;
+  document.getElementById('confirmOverlay').classList.add('show');
 }
 
-// Add habit
+function closeConfirm() {
+  pendingDeleteId = null;
+  document.getElementById('confirmOverlay').classList.remove('show');
+}
+
+document.getElementById('confirmCancel').addEventListener('click', closeConfirm);
+document.getElementById('confirmOverlay').addEventListener('click', e => {
+  if (e.target === e.currentTarget) closeConfirm();
+});
+document.getElementById('confirmYes').addEventListener('click', () => {
+  if (pendingDeleteId) {
+    state.habits = state.habits.filter(h => h.id !== pendingDeleteId);
+    Object.keys(state.log).forEach(k => {
+      state.log[k] = (state.log[k] || []).filter(x => x !== pendingDeleteId);
+    });
+    delete state.bestStreaks[pendingDeleteId];
+    saveState(state);
+    render();
+    showToast('Hábito eliminado');
+  }
+  closeConfirm();
+});
+
+/* ─── EDIT MODAL ─────────────────────────────────────────── */
+let editingId = null;
+
+function openEditModal(id) {
+  const habit = state.habits.find(h => h.id === id);
+  if (!habit) return;
+  editingId = id;
+  document.getElementById('editName').value = habit.name;
+  document.getElementById('editCategory').value = habit.category;
+  document.getElementById('editOverlay').classList.add('show');
+  setTimeout(() => document.getElementById('editName').focus(), 100);
+}
+
+function closeEdit() {
+  editingId = null;
+  document.getElementById('editOverlay').classList.remove('show');
+}
+
+document.getElementById('editCancel').addEventListener('click', closeEdit);
+document.getElementById('editOverlay').addEventListener('click', e => {
+  if (e.target === e.currentTarget) closeEdit();
+});
+document.getElementById('editName').addEventListener('keydown', e => {
+  if (e.key === 'Enter') saveEdit();
+  if (e.key === 'Escape') closeEdit();
+});
+document.getElementById('editSave').addEventListener('click', saveEdit);
+
+function saveEdit() {
+  if (!editingId) return;
+  const name = document.getElementById('editName').value.trim();
+  if (!name) return;
+  const category = document.getElementById('editCategory').value;
+  const habit = state.habits.find(h => h.id === editingId);
+  if (habit) {
+    habit.name = name;
+    habit.category = category;
+    saveState(state);
+    render();
+    showToast('Hábito actualizado');
+  }
+  closeEdit();
+}
+
+/* ─── ADD HABIT ──────────────────────────────────────────── */
 document.getElementById('addBtn').addEventListener('click', addHabit);
 document.getElementById('addInput').addEventListener('keydown', e => {
   if (e.key === 'Enter') addHabit();
@@ -816,6 +1206,31 @@ function addHabit() {
   render();
   showToast('Hábito agregado');
 }
+
+/* ─── AUTO-REFRESH AT MIDNIGHT ───────────────────────────── */
+// Re-render when tab becomes visible if the date changed
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && todayKey() !== lastRenderedDate) {
+    render();
+    showToast('Nuevo día — ¡a por los hábitos!');
+  }
+});
+
+// Also check every 60s in case the tab stays active overnight
+setInterval(() => {
+  if (todayKey() !== lastRenderedDate) {
+    render();
+    showToast('Nuevo día — ¡a por los hábitos!');
+  }
+}, 60000);
+
+/* ─── KEYBOARD SHORTCUTS ─────────────────────────────────── */
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    closeConfirm();
+    closeEdit();
+  }
+});
 
 /* ─── TOAST ──────────────────────────────────────────────── */
 let toastTimer;
@@ -834,6 +1249,11 @@ function escHtml(s) {
 
 /* ─── BOOT ───────────────────────────────────────────────── */
 render();
+
+// Register service worker
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').catch(() => {});
+}
 </script>
 </body>
 </html>
