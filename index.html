@@ -1340,18 +1340,24 @@ async function toggleHabit(id) {
   const idx = state.log[today].indexOf(id);
   if (idx === -1) {
     state.log[today].push(id);
-    sb.from('habit_logs').upsert({ habit_id: id, date: today, user_id: currentUser.id });
-    showToast('¡Hábito completado!');
+    const { error } = await sb.from('habit_logs')
+      .upsert({ habit_id: id, date: today, user_id: currentUser.id }, { onConflict: 'habit_id,date' });
+    if (error) { console.error('habit_logs upsert:', error); showToast('Error al guardar'); }
+    else showToast('¡Hábito completado!');
   } else {
     state.log[today].splice(idx, 1);
-    sb.from('habit_logs').delete().eq('habit_id', id).eq('date', today).eq('user_id', currentUser.id);
+    const { error } = await sb.from('habit_logs')
+      .delete().eq('habit_id', id).eq('date', today).eq('user_id', currentUser.id);
+    if (error) console.error('habit_logs delete:', error);
   }
   // Persist best streak
   const streak = getStreak(id);
   const prev = state.bestStreaks[id] || 0;
   if (streak > prev) {
     state.bestStreaks[id] = streak;
-    sb.from('best_streaks').upsert({ habit_id: id, user_id: currentUser.id, streak });
+    const { error } = await sb.from('best_streaks')
+      .upsert({ habit_id: id, user_id: currentUser.id, streak }, { onConflict: 'habit_id' });
+    if (error) console.error('best_streaks upsert:', error);
   }
   render();
   setTimeout(() => {
@@ -1391,7 +1397,8 @@ document.getElementById('confirmYes').addEventListener('click', async () => {
       state.log[k] = (state.log[k] || []).filter(x => x !== id);
     });
     delete state.bestStreaks[id];
-    sb.from('habits').delete().eq('id', id);
+    const { error } = await sb.from('habits').delete().eq('id', id);
+    if (error) console.error('habits delete:', error);
     render();
     showToast('Hábito eliminado');
   }
@@ -1455,7 +1462,8 @@ async function addHabit() {
   const category = document.getElementById('addCategory').value;
   const id = uid();
   state.habits.push({ id, name, category });
-  sb.from('habits').insert({ id, name, category, user_id: currentUser.id });
+  const { error } = await sb.from('habits').insert({ id, name, category, user_id: currentUser.id });
+  if (error) console.error('habits insert:', error);
   input.value = '';
   render();
   showToast('Hábito agregado');
