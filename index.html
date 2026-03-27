@@ -1079,7 +1079,10 @@ document.getElementById('logoutBtn').addEventListener('click', async () => {
 });
 
 /* ─── DATA ───────────────────────────────────────────────── */
+let _dataLoading = false;
 async function loadDataFromSupabase() {
+  if (_dataLoading) return;
+  _dataLoading = true;
   const [{ data: habits }, { data: logs }, { data: streaks }] = await Promise.all([
     sb.from('habits').select('*').order('created_at'),
     sb.from('habit_logs').select('*'),
@@ -1105,6 +1108,7 @@ async function loadDataFromSupabase() {
     await sb.from('habits').insert(seeds.map(h => ({ ...h, user_id: currentUser.id })));
     state.habits = seeds;
   }
+  _dataLoading = false;
 }
 
 /* ─── DATE HELPERS ───────────────────────────────────────── */
@@ -1340,26 +1344,35 @@ async function toggleHabit(id) {
   const idx = state.log[today].indexOf(id);
   if (idx === -1) {
     state.log[today].push(id);
+    render(); // optimistic update
     const { error } = await sb.from('habit_logs')
       .upsert({ habit_id: id, date: today, user_id: currentUser.id }, { onConflict: 'habit_id,date' });
-    if (error) { console.error('habit_logs upsert:', error); showToast('Error al guardar'); }
-    else showToast('¡Hábito completado!');
+    if (error) {
+      console.error('habit_logs upsert:', error);
+      state.log[today].splice(state.log[today].indexOf(id), 1); // revert
+      render();
+      showToast('Error al guardar');
+    } else showToast('¡Hábito completado!');
   } else {
     state.log[today].splice(idx, 1);
+    render(); // optimistic update
     const { error } = await sb.from('habit_logs')
       .delete().eq('habit_id', id).eq('date', today).eq('user_id', currentUser.id);
-    if (error) console.error('habit_logs delete:', error);
+    if (error) {
+      console.error('habit_logs delete:', error);
+      state.log[today].push(id); // revert
+      render();
+    }
   }
-  // Persist best streak
+  // Persist best streak (fire and forget — not critical path)
   const streak = getStreak(id);
   const prev = state.bestStreaks[id] || 0;
   if (streak > prev) {
     state.bestStreaks[id] = streak;
-    const { error } = await sb.from('best_streaks')
-      .upsert({ habit_id: id, user_id: currentUser.id, streak }, { onConflict: 'habit_id' });
-    if (error) console.error('best_streaks upsert:', error);
+    sb.from('best_streaks')
+      .upsert({ habit_id: id, user_id: currentUser.id, streak }, { onConflict: 'habit_id' })
+      .then(({ error }) => { if (error) console.error('best_streaks:', error); });
   }
-  render();
   setTimeout(() => {
     const box = document.querySelector(`.habit-check-inner[data-id="${id}"] .check-box`);
     if (box) {
@@ -1515,17 +1528,20 @@ render(); // empty state while auth loads
 if (sb) {
   sb.auth.onAuthStateChange(async (event, session) => {
     if (session) {
+      const isNewUser = currentUser?.id !== session.user.id;
       currentUser = session.user;
       updateAuthBadge(currentUser);
-      try {
-        await loadDataFromSupabase();
-      } catch (err) {
-        console.error('Error cargando datos:', err);
-        showToast('Error al cargar datos — ¿creaste las tablas en Supabase?');
+      if (isNewUser) {
+        try {
+          await loadDataFromSupabase();
+        } catch (err) {
+          console.error('Error cargando datos:', err);
+          showToast('Error al cargar datos — ¿creaste las tablas en Supabase?');
+        }
+        hideAuthPanel();
+        render();
+        if (event === 'SIGNED_IN') showToast('Bienvenido/a');
       }
-      hideAuthPanel();
-      render();
-      if (event === 'SIGNED_IN') showToast('Bienvenido/a');
     } else {
       currentUser = null;
       state = { habits: [], log: {}, bestStreaks: {} };
