@@ -1075,7 +1075,25 @@ function translateAuthError(msg) {
 }
 
 document.getElementById('logoutBtn').addEventListener('click', async () => {
-  if (sb) await sb.auth.signOut();
+  if (!sb) return;
+  const btn = document.getElementById('logoutBtn');
+  btn.textContent = '...';
+  btn.disabled = true;
+  try {
+    const { error } = await sb.auth.signOut();
+    if (error) throw error;
+  } catch (err) {
+    console.error('signOut error:', err);
+    // Force logout locally even if API fails
+    currentUser = null;
+    state = { habits: [], log: {}, bestStreaks: {} };
+    _dataLoading = false;
+    document.getElementById('userBadge').style.display = 'none';
+    showAuthPanel();
+    render();
+    btn.textContent = 'SALIR';
+    btn.disabled = false;
+  }
 });
 
 /* ─── DATA ───────────────────────────────────────────────── */
