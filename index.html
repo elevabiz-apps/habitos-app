@@ -963,7 +963,7 @@
 <script>
 /* ─── SUPABASE CONFIG ────────────────────────────────────── */
 const SUPABASE_URL = 'https://nqarrnmebcwiyrylmmso.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_lMiZDuoLPxnTM6D5ymdLUA_ixLTYwWw';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5xYXJybm1lYmN3aXlyeWxtbXNvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2NDg0ODksImV4cCI6MjA5MDIyNDQ4OX0.6hAmsclNVpsLwp1rU3LEn6w9FB4xe0toQzR8ZotWyhQ';
 
 const _configOk = SUPABASE_URL.startsWith('http') && SUPABASE_KEY.length > 10;
 const sb = _configOk
@@ -1029,6 +1029,13 @@ document.getElementById('authSubmit').addEventListener('click', handleAuth);
 document.getElementById('authPassword').addEventListener('keydown', e => { if (e.key === 'Enter') handleAuth(); });
 document.getElementById('authEmail').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('authPassword').focus(); });
 
+function withTimeout(promise, ms) {
+  const timeout = new Promise((_, reject) =>
+    setTimeout(() => reject(new Error('timeout')), ms)
+  );
+  return Promise.race([promise, timeout]);
+}
+
 async function handleAuth() {
   if (!sb) return;
   const email    = document.getElementById('authEmail').value.trim();
@@ -1041,10 +1048,10 @@ async function handleAuth() {
   errEl.textContent = '';
   try {
     if (authMode === 'login') {
-      const { error } = await sb.auth.signInWithPassword({ email, password });
+      const { error } = await withTimeout(sb.auth.signInWithPassword({ email, password }), 8000);
       if (error) throw error;
     } else {
-      const { data, error } = await sb.auth.signUp({ email, password });
+      const { data, error } = await withTimeout(sb.auth.signUp({ email, password }), 8000);
       if (error) throw error;
       // If email confirmation is required, session will be null
       if (!data.session) {
@@ -1057,7 +1064,9 @@ async function handleAuth() {
     }
   } catch (err) {
     errEl.style.color = 'var(--red)';
-    errEl.textContent = translateAuthError(err.message);
+    errEl.textContent = err.message === 'timeout'
+      ? 'No se pudo conectar. Revisá tu conexión e intentá de nuevo.'
+      : translateAuthError(err.message);
   } finally {
     if (btn.textContent === '...') {
       btn.textContent = authMode === 'login' ? 'ENTRAR' : 'CREAR CUENTA';
