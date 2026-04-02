@@ -1123,7 +1123,7 @@ async function loadDataFromSupabase() {
     state.bestStreaks = {};
     (streaks || []).forEach(s => { state.bestStreaks[s.habit_id] = s.streak; });
 
-    // Seed for new users
+    // Seed for new users — awaited so _dataLoading guard blocks any concurrent load
     if (state.habits.length === 0) {
       const seeds = [
         { id: uid(), name: 'Meditar 10 minutos', category: 'mente' },
@@ -1131,9 +1131,13 @@ async function loadDataFromSupabase() {
         { id: uid(), name: 'Leer 20 páginas',    category: 'mente' },
         { id: uid(), name: 'Beber 2L de agua',   category: 'salud' },
       ];
-      state.habits = seeds; // show immediately
-      sb.from('habits').insert(seeds.map(h => ({ ...h, user_id: currentUser.id })))
-        .then(({ error }) => { if (error) console.error('seed insert:', error); });
+      const { error: seedErr } = await sb.from('habits')
+        .insert(seeds.map(h => ({ ...h, user_id: currentUser.id })));
+      if (seedErr) {
+        console.error('seed insert:', seedErr);
+      } else {
+        state.habits = seeds;
+      }
     }
   } finally {
     _dataLoading = false;
@@ -1561,9 +1565,10 @@ if (sb) {
       currentUser = session.user;
       updateAuthBadge(currentUser);
       hideAuthPanel();
-      if (isNewUser) {
+      if (isNewUser || state.habits.length === 0) {
         // Defer DB calls outside the SDK lock context to avoid deadlock
         setTimeout(async () => {
+          if (_dataLoading) return; // guard: already loading
           try {
             await loadDataFromSupabase();
           } catch (err) {
