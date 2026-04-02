@@ -196,7 +196,7 @@
     .habit-item {
       background: var(--surface);
       display: grid;
-      grid-template-columns: 56px 1fr auto auto auto;
+      grid-template-columns: 56px 1fr auto auto auto auto;
       align-items: stretch;
       gap: 0;
       transition: background 0.2s;
@@ -793,9 +793,32 @@
     .toast.show { transform: translateY(0); opacity: 1; }
 
     /* ─── RESPONSIVE ─────────────────────────────────────── */
+    /* ─── REORDER ───────────────────────────────────────────── */
+    .habit-reorder {
+      display: flex;
+      flex-direction: column;
+      border-left: 1px solid var(--border);
+      height: 100%;
+    }
+    .reorder-btn {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.6rem;
+      color: var(--muted);
+      padding: 0 0.6rem;
+      transition: color 0.15s, background 0.15s;
+      line-height: 1;
+    }
+    .reorder-btn:hover:not(:disabled) { color: var(--text); background: #1a1a1a; }
+    .reorder-btn:disabled { opacity: 0.2; cursor: default; }
+    .reorder-btn + .reorder-btn { border-top: 1px solid var(--border); }
+
     @media (max-width: 640px) {
       .habit-week { display: none; }
       .habit-delete { display: none; }
+      .habit-reorder { display: none; }
       .add-form { grid-template-columns: 1fr auto; }
       .add-category { display: none; }
       .stats-row { grid-template-columns: repeat(3, 1fr); }
@@ -1046,6 +1069,17 @@
   </div>
 </div>
 
+<!-- LOGOUT CONFIRM -->
+<div class="confirm-overlay" id="logoutConfirmOverlay">
+  <div class="confirm-box">
+    <p>¿Cerrar sesión?</p>
+    <div class="confirm-actions">
+      <button class="confirm-cancel" id="logoutConfirmCancel">CANCELAR</button>
+      <button class="confirm-yes" id="logoutConfirmYes" style="background:var(--muted);color:var(--bg)">SALIR</button>
+    </div>
+  </div>
+</div>
+
 <!-- EDIT MODAL -->
 <div class="edit-overlay" id="editOverlay">
   <div class="edit-box">
@@ -1214,7 +1248,14 @@ function translateAuthError(msg) {
   return msg;
 }
 
-document.getElementById('logoutBtn').addEventListener('click', async () => {
+document.getElementById('logoutBtn').addEventListener('click', () => {
+  document.getElementById('logoutConfirmOverlay').classList.add('show');
+});
+document.getElementById('logoutConfirmCancel').addEventListener('click', () => {
+  document.getElementById('logoutConfirmOverlay').classList.remove('show');
+});
+document.getElementById('logoutConfirmYes').addEventListener('click', async () => {
+  document.getElementById('logoutConfirmOverlay').classList.remove('show');
   if (!sb) return;
   const btn = document.getElementById('logoutBtn');
   btn.textContent = '...';
@@ -1247,6 +1288,7 @@ async function loadDataFromSupabase() {
       sb.from('best_streaks').select('*').eq('user_id', userId),
     ]);
     state.habits = (habits || []).map(h => ({ id: h.id, name: h.name, category: h.category }));
+    applyHabitOrder(); // restore user-defined sort from localStorage
     state.log = {};
     (logs || []).forEach(l => {
       if (!state.log[l.date]) state.log[l.date] = [];
@@ -1417,6 +1459,10 @@ function renderHabits() {
         <p class="streak-label">racha</p>
       </div>
       <div class="habit-week">${weekDots}</div>
+      <div class="habit-reorder">
+        <button class="reorder-btn" data-up="${habit.id}" title="Subir">▲</button>
+        <button class="reorder-btn" data-down="${habit.id}" title="Bajar">▼</button>
+      </div>
       <button class="habit-delete" data-del="${habit.id}" title="Eliminar">✕</button>
       <div class="habit-actions-mobile">
         <button class="mob-edit" data-mob-edit="${habit.id}">EDITAR</button>
@@ -1425,6 +1471,13 @@ function renderHabits() {
     `;
     list.appendChild(item);
   });
+
+  // Disable first ▲ and last ▼
+  const items = list.querySelectorAll('.habit-item');
+  if (items.length > 0) {
+    items[0].querySelector('[data-up]').disabled = true;
+    items[items.length - 1].querySelector('[data-down]').disabled = true;
+  }
 }
 
 function renderWeekGrid() {
@@ -1555,6 +1608,26 @@ document.getElementById('habitList').addEventListener('click', e => {
   // Desktop delete
   const delEl = e.target.closest('[data-del]');
   if (delEl) { openConfirm(delEl.dataset.del); return; }
+
+  // Reorder up/down
+  const upBtn = e.target.closest('[data-up]');
+  if (upBtn) {
+    const idx = state.habits.findIndex(h => h.id === upBtn.dataset.up);
+    if (idx > 0) {
+      [state.habits[idx - 1], state.habits[idx]] = [state.habits[idx], state.habits[idx - 1]];
+      saveHabitOrder(); renderHabits();
+    }
+    return;
+  }
+  const downBtn = e.target.closest('[data-down]');
+  if (downBtn) {
+    const idx = state.habits.findIndex(h => h.id === downBtn.dataset.down);
+    if (idx < state.habits.length - 1) {
+      [state.habits[idx], state.habits[idx + 1]] = [state.habits[idx + 1], state.habits[idx]];
+      saveHabitOrder(); renderHabits();
+    }
+    return;
+  }
 
   // Desktop edit (double-click handled separately)
   // Toggle check
@@ -1714,6 +1787,26 @@ async function saveEdit() {
     showToast('Hábito actualizado');
   }
 }
+
+/* ─── HABIT REORDER ──────────────────────────────────────── */
+function saveHabitOrder() {
+  if (!currentUser) return;
+  localStorage.setItem(`habitos-order-${currentUser.id}`, JSON.stringify(state.habits.map(h => h.id)));
+}
+function applyHabitOrder() {
+  if (!currentUser) return;
+  const saved = localStorage.getItem(`habitos-order-${currentUser.id}`);
+  if (!saved) return;
+  try {
+    const ids = JSON.parse(saved);
+    const map = Object.fromEntries(state.habits.map(h => [h.id, h]));
+    const ordered = ids.map(id => map[id]).filter(Boolean);
+    // append any habits not in saved order (e.g. newly added)
+    state.habits.forEach(h => { if (!ids.includes(h.id)) ordered.push(h); });
+    state.habits = ordered;
+  } catch (_) {}
+}
+
 
 /* ─── CATEGORY FILTER ────────────────────────────────────── */
 document.getElementById('catFilters').addEventListener('click', e => {
