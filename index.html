@@ -31,6 +31,13 @@
       --mono:     'Space Mono', monospace;
       --display:  'Bebas Neue', sans-serif;
       --serif:    'Playfair Display', serif;
+      /* category colors */
+      --cat-salud:   #00e5a0;
+      --cat-mente:   #a78bfa;
+      --cat-cuerpo:  #fb923c;
+      --cat-trabajo: #38bdf8;
+      --cat-social:  #f472b6;
+      --cat-otro:    #94a3b8;
     }
 
     /* ─── RESET ──────────────────────────────────────────── */
@@ -257,6 +264,99 @@
       color: var(--muted);
     }
     .habit-tag.lime { color: var(--lime); }
+    .habit-tag.cat-salud   { color: var(--cat-salud); }
+    .habit-tag.cat-mente   { color: var(--cat-mente); }
+    .habit-tag.cat-cuerpo  { color: var(--cat-cuerpo); }
+    .habit-tag.cat-trabajo { color: var(--cat-trabajo); }
+    .habit-tag.cat-social  { color: var(--cat-social); }
+    .habit-tag.cat-otro    { color: var(--cat-otro); }
+    /* category accent on left border */
+    .habit-item { border-left: 3px solid transparent; }
+    .habit-item.cat-salud   { border-left-color: var(--cat-salud); }
+    .habit-item.cat-mente   { border-left-color: var(--cat-mente); }
+    .habit-item.cat-cuerpo  { border-left-color: var(--cat-cuerpo); }
+    .habit-item.cat-trabajo { border-left-color: var(--cat-trabajo); }
+    .habit-item.cat-social  { border-left-color: var(--cat-social); }
+    .habit-item.cat-otro    { border-left-color: var(--cat-otro); }
+
+    /* ─── CATEGORY FILTER ────────────────────────────────── */
+    .cat-filters {
+      display: flex;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+      margin-bottom: 1rem;
+    }
+    .cat-btn {
+      font-size: 0.55rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 0.25rem 0.65rem;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      background: transparent;
+      cursor: pointer;
+      transition: color 0.15s, border-color 0.15s, background 0.15s;
+    }
+    .cat-btn:hover { color: var(--text); border-color: var(--muted); }
+    .cat-btn.active { color: var(--bg); background: var(--text); border-color: var(--text); }
+    .cat-btn.active.f-salud   { background: var(--cat-salud);   border-color: var(--cat-salud);   color: #000; }
+    .cat-btn.active.f-mente   { background: var(--cat-mente);   border-color: var(--cat-mente);   color: #000; }
+    .cat-btn.active.f-cuerpo  { background: var(--cat-cuerpo);  border-color: var(--cat-cuerpo);  color: #000; }
+    .cat-btn.active.f-trabajo { background: var(--cat-trabajo); border-color: var(--cat-trabajo); color: #000; }
+    .cat-btn.active.f-social  { background: var(--cat-social);  border-color: var(--cat-social);  color: #000; }
+    .cat-btn.active.f-otro    { background: var(--cat-otro);    border-color: var(--cat-otro);    color: #000; }
+
+    /* ─── MONTHLY HEATMAP ────────────────────────────────── */
+    .monthly-section { margin-top: 3rem; }
+    .heatmap-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 3px;
+      margin-top: 1rem;
+    }
+    .heatmap-day-label {
+      font-size: 0.5rem;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      text-align: center;
+      padding-bottom: 0.25rem;
+      text-transform: uppercase;
+    }
+    .heatmap-cell {
+      aspect-ratio: 1;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      position: relative;
+      cursor: default;
+    }
+    .heatmap-cell.empty { border-color: transparent; background: transparent; }
+    .heatmap-cell.level-1 { background: #1a2e0a; border-color: #2a4010; }
+    .heatmap-cell.level-2 { background: #2d5011; border-color: #3d6818; }
+    .heatmap-cell.level-3 { background: #5a9020; border-color: #6aaa28; }
+    .heatmap-cell.level-4 { background: var(--lime); border-color: var(--lime); }
+    .heatmap-cell.is-today { outline: 2px solid var(--lime); outline-offset: 1px; }
+    .heatmap-cell .cell-tip {
+      display: none;
+      position: absolute;
+      bottom: calc(100% + 4px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      font-size: 0.5rem;
+      padding: 0.2rem 0.4rem;
+      white-space: nowrap;
+      z-index: 10;
+      pointer-events: none;
+    }
+    .heatmap-cell:hover .cell-tip { display: block; }
+    .heatmap-month-label {
+      font-size: 0.55rem;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-bottom: 0.25rem;
+    }
 
     /* Streak */
     .habit-streak {
@@ -873,6 +973,16 @@
     <span class="section-count" id="sectionCount">0 HÁBITOS</span>
   </div>
 
+  <div class="cat-filters" id="catFilters">
+    <button class="cat-btn active" data-filter="all">TODOS</button>
+    <button class="cat-btn f-salud"   data-filter="salud">SALUD</button>
+    <button class="cat-btn f-mente"   data-filter="mente">MENTE</button>
+    <button class="cat-btn f-cuerpo"  data-filter="cuerpo">CUERPO</button>
+    <button class="cat-btn f-trabajo" data-filter="trabajo">TRABAJO</button>
+    <button class="cat-btn f-social"  data-filter="social">SOCIAL</button>
+    <button class="cat-btn f-otro"    data-filter="otro">OTRO</button>
+  </div>
+
   <div class="habit-list" id="habitList"></div>
 
   <!-- ADD HABIT -->
@@ -903,6 +1013,15 @@
       <h2 class="section-title">SEMANA</h2>
     </div>
     <div class="week-grid" id="weekGrid"></div>
+  </div>
+
+  <!-- MONTHLY HEATMAP -->
+  <div class="monthly-section">
+    <div class="section-header" style="margin-bottom:0">
+      <h2 class="section-title">MES</h2>
+      <span class="section-count" id="heatmapMonthLabel"></span>
+    </div>
+    <div id="heatmapGrid"></div>
   </div>
 
   <!-- FOOTER PROGRESS -->
@@ -1000,6 +1119,7 @@ function todayKey() {
 
 /* ─── AUTH UI ────────────────────────────────────────────── */
 let authMode = 'login';
+let activeCatFilter = 'all';
 
 function showAuthPanel() {
   const overlay = document.getElementById('authOverlay');
@@ -1210,6 +1330,7 @@ function render() {
   updateHeader();
   renderHabits();
   renderWeekGrid();
+  renderHeatmap();
   updateStats();
   updateCelebration();
 }
@@ -1240,15 +1361,26 @@ function renderHabits() {
     return;
   }
 
-  document.getElementById('sectionCount').textContent =
-    `${state.habits.length} HÁBITO${state.habits.length !== 1 ? 'S' : ''}`;
+  // Filter by active category
+  const filtered = activeCatFilter === 'all'
+    ? state.habits
+    : state.habits.filter(h => h.category === activeCatFilter);
 
   // Sort: pending first, then completed
-  const sorted = [...state.habits].sort((a, b) => {
+  const sorted = [...filtered].sort((a, b) => {
     const ad = doneset.has(a.id) ? 1 : 0;
     const bd = doneset.has(b.id) ? 1 : 0;
     return ad - bd;
   });
+
+  if (sorted.length === 0 && activeCatFilter !== 'all') {
+    list.innerHTML = `<div class="empty-state"><p>SIN HÁBITOS EN ESTA CATEGORÍA</p></div>`;
+    document.getElementById('sectionCount').textContent = '0 HÁBITOS';
+    return;
+  }
+
+  document.getElementById('sectionCount').textContent =
+    `${sorted.length} HÁBITO${sorted.length !== 1 ? 'S' : ''}`;
 
   sorted.forEach(habit => {
     const done   = doneset.has(habit.id);
@@ -1261,7 +1393,7 @@ function renderHabits() {
     }).join('');
 
     const item = document.createElement('div');
-    item.className = `habit-item${done ? ' completed' : ''}`;
+    item.className = `habit-item cat-${habit.category}${done ? ' completed' : ''}`;
     item.dataset.id = habit.id;
     item.innerHTML = `
       <div class="habit-check">
@@ -1276,7 +1408,7 @@ function renderHabits() {
       <div class="habit-body" data-edit-id="${habit.id}">
         <p class="habit-name">${escHtml(habit.name)}</p>
         <div class="habit-meta">
-          <span class="habit-tag lime">${habit.category.toUpperCase()}</span>
+          <span class="habit-tag cat-${habit.category}">${habit.category.toUpperCase()}</span>
           ${streak > 1 ? `<span class="habit-tag">🔥 ${streak} días</span>` : ''}
         </div>
       </div>
@@ -1321,6 +1453,69 @@ function renderWeekGrid() {
     `;
     grid.appendChild(col);
   }
+}
+
+function renderHeatmap() {
+  const container = document.getElementById('heatmapGrid');
+  if (!container) return;
+  container.innerHTML = '';
+
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  const total = state.habits.length;
+
+  // Label
+  document.getElementById('heatmapMonthLabel').textContent =
+    `${MONTHS_ES[month]} ${year}`;
+
+  // Day-of-week headers (starting Monday)
+  const dayLabels = ['LUN','MAR','MIÉ','JUE','VIE','SÁB','DOM'];
+  const headerRow = document.createElement('div');
+  headerRow.className = 'heatmap-grid';
+  dayLabels.forEach(d => {
+    const lbl = document.createElement('div');
+    lbl.className = 'heatmap-day-label';
+    lbl.textContent = d;
+    headerRow.appendChild(lbl);
+  });
+  container.appendChild(headerRow);
+
+  // Grid
+  const grid = document.createElement('div');
+  grid.className = 'heatmap-grid';
+
+  // First day of month (0=Sun..6=Sat → convert to Mon-based 0-6)
+  const firstDay = new Date(year, month, 1).getDay();
+  const offset = (firstDay + 6) % 7; // Monday = 0
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const todayStr = todayKey();
+
+  // Blank cells before first day
+  for (let i = 0; i < offset; i++) {
+    const blank = document.createElement('div');
+    blank.className = 'heatmap-cell empty';
+    grid.appendChild(blank);
+  }
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const key = `${year}-${String(month + 1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const done = (state.log[key] || []).filter(id => state.habits.some(h => h.id === id)).length;
+    const pct  = total ? done / total : 0;
+    const level = pct === 0 ? 0 : pct < 0.34 ? 1 : pct < 0.67 ? 2 : pct < 1 ? 3 : 4;
+    const isToday = key === todayStr;
+    const isFuture = key > todayStr;
+
+    const cell = document.createElement('div');
+    cell.className = `heatmap-cell${level > 0 && !isFuture ? ` level-${level}` : ''}${isToday ? ' is-today' : ''}`;
+    const tip = document.createElement('span');
+    tip.className = 'cell-tip';
+    tip.textContent = isFuture ? String(d) : `${d} — ${done}/${total}`;
+    cell.appendChild(tip);
+    grid.appendChild(cell);
+  }
+
+  container.appendChild(grid);
 }
 
 function updateStats() {
@@ -1519,6 +1714,16 @@ async function saveEdit() {
     showToast('Hábito actualizado');
   }
 }
+
+/* ─── CATEGORY FILTER ────────────────────────────────────── */
+document.getElementById('catFilters').addEventListener('click', e => {
+  const btn = e.target.closest('[data-filter]');
+  if (!btn) return;
+  activeCatFilter = btn.dataset.filter;
+  document.querySelectorAll('#catFilters .cat-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderHabits();
+});
 
 /* ─── ADD HABIT ──────────────────────────────────────────── */
 document.getElementById('addBtn').addEventListener('click', addHabit);
