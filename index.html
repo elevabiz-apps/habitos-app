@@ -1108,32 +1108,36 @@ let _dataLoading = false;
 async function loadDataFromSupabase() {
   if (_dataLoading) return;
   _dataLoading = true;
-  const [{ data: habits }, { data: logs }, { data: streaks }] = await Promise.all([
-    sb.from('habits').select('*').order('created_at'),
-    sb.from('habit_logs').select('*'),
-    sb.from('best_streaks').select('*'),
-  ]);
-  state.habits = (habits || []).map(h => ({ id: h.id, name: h.name, category: h.category }));
-  state.log = {};
-  (logs || []).forEach(l => {
-    if (!state.log[l.date]) state.log[l.date] = [];
-    state.log[l.date].push(l.habit_id);
-  });
-  state.bestStreaks = {};
-  (streaks || []).forEach(s => { state.bestStreaks[s.habit_id] = s.streak; });
+  try {
+    const [{ data: habits }, { data: logs }, { data: streaks }] = await Promise.all([
+      sb.from('habits').select('*').order('created_at'),
+      sb.from('habit_logs').select('*'),
+      sb.from('best_streaks').select('*'),
+    ]);
+    state.habits = (habits || []).map(h => ({ id: h.id, name: h.name, category: h.category }));
+    state.log = {};
+    (logs || []).forEach(l => {
+      if (!state.log[l.date]) state.log[l.date] = [];
+      state.log[l.date].push(l.habit_id);
+    });
+    state.bestStreaks = {};
+    (streaks || []).forEach(s => { state.bestStreaks[s.habit_id] = s.streak; });
 
-  // Seed for new users
-  if (state.habits.length === 0) {
-    const seeds = [
-      { id: uid(), name: 'Meditar 10 minutos', category: 'mente' },
-      { id: uid(), name: 'Ejercicio 30 min',   category: 'cuerpo' },
-      { id: uid(), name: 'Leer 20 páginas',    category: 'mente' },
-      { id: uid(), name: 'Beber 2L de agua',   category: 'salud' },
-    ];
-    await sb.from('habits').insert(seeds.map(h => ({ ...h, user_id: currentUser.id })));
-    state.habits = seeds;
+    // Seed for new users
+    if (state.habits.length === 0) {
+      const seeds = [
+        { id: uid(), name: 'Meditar 10 minutos', category: 'mente' },
+        { id: uid(), name: 'Ejercicio 30 min',   category: 'cuerpo' },
+        { id: uid(), name: 'Leer 20 páginas',    category: 'mente' },
+        { id: uid(), name: 'Beber 2L de agua',   category: 'salud' },
+      ];
+      state.habits = seeds; // show immediately
+      sb.from('habits').insert(seeds.map(h => ({ ...h, user_id: currentUser.id })))
+        .then(({ error }) => { if (error) console.error('seed insert:', error); });
+    }
+  } finally {
+    _dataLoading = false;
   }
-  _dataLoading = false;
 }
 
 /* ─── DATE HELPERS ───────────────────────────────────────── */
@@ -1556,6 +1560,7 @@ if (sb) {
       const isNewUser = currentUser?.id !== session.user.id;
       currentUser = session.user;
       updateAuthBadge(currentUser);
+      hideAuthPanel();
       if (isNewUser) {
         try {
           await loadDataFromSupabase();
@@ -1563,10 +1568,9 @@ if (sb) {
           console.error('Error cargando datos:', err);
           showToast('Error al cargar datos — ¿creaste las tablas en Supabase?');
         }
+        render();
         if (event === 'SIGNED_IN') showToast('Bienvenido/a');
       }
-      hideAuthPanel();
-      render();
     } else {
       currentUser = null;
       state = { habits: [], log: {}, bestStreaks: {} };
