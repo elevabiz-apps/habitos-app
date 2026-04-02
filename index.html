@@ -1109,10 +1109,11 @@ async function loadDataFromSupabase() {
   if (_dataLoading) return;
   _dataLoading = true;
   try {
+    const userId = currentUser.id;
     const [{ data: habits }, { data: logs }, { data: streaks }] = await Promise.all([
-      sb.from('habits').select('*').order('created_at'),
-      sb.from('habit_logs').select('*'),
-      sb.from('best_streaks').select('*'),
+      sb.from('habits').select('*').eq('user_id', userId).order('created_at'),
+      sb.from('habit_logs').select('*').eq('user_id', userId),
+      sb.from('best_streaks').select('*').eq('user_id', userId),
     ]);
     state.habits = (habits || []).map(h => ({ id: h.id, name: h.name, category: h.category }));
     state.log = {};
