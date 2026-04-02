@@ -1555,21 +1555,24 @@ function escHtml(s) {
 render(); // empty state while auth loads
 
 if (sb) {
-  sb.auth.onAuthStateChange(async (event, session) => {
+  sb.auth.onAuthStateChange((event, session) => {
     if (session) {
       const isNewUser = currentUser?.id !== session.user.id;
       currentUser = session.user;
       updateAuthBadge(currentUser);
       hideAuthPanel();
       if (isNewUser) {
-        try {
-          await loadDataFromSupabase();
-        } catch (err) {
-          console.error('Error cargando datos:', err);
-          showToast('Error al cargar datos — ¿creaste las tablas en Supabase?');
-        }
-        render();
-        if (event === 'SIGNED_IN') showToast('Bienvenido/a');
+        // Defer DB calls outside the SDK lock context to avoid deadlock
+        setTimeout(async () => {
+          try {
+            await loadDataFromSupabase();
+          } catch (err) {
+            console.error('Error cargando datos:', err);
+            showToast('Error al cargar datos — ¿creaste las tablas en Supabase?');
+          }
+          render();
+          if (event === 'SIGNED_IN') showToast('Bienvenido/a');
+        }, 0);
       }
     } else {
       currentUser = null;
