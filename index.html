@@ -342,6 +342,17 @@
       border: 1px dashed var(--border);
     }
     .empty-state p { color: var(--muted); font-size: 0.75rem; letter-spacing: 0.1em; }
+    .loading-state { display: flex; flex-direction: column; gap: 0.75rem; padding: 2rem; }
+    .skeleton-line {
+      display: block; height: 2.5rem; border-radius: 2px;
+      background: linear-gradient(90deg, var(--surface) 25%, var(--border) 50%, var(--surface) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.4s infinite;
+    }
+    .skeleton-line:nth-child(2) { width: 88%; }
+    .skeleton-line:nth-child(3) { width: 92%; }
+    .skeleton-line:nth-child(4) { width: 80%; }
+    @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 
     /* ─── ADD HABIT ──────────────────────────────────────── */
     .add-section {
@@ -1220,7 +1231,11 @@ function renderHabits() {
   list.innerHTML = '';
 
   if (state.habits.length === 0) {
-    list.innerHTML = `<div class="empty-state"><p>SIN HÁBITOS — AGREGA UNO ABAJO</p></div>`;
+    if (_dataLoading) {
+      list.innerHTML = `<div class="empty-state loading-state"><span class="skeleton-line"></span><span class="skeleton-line"></span><span class="skeleton-line"></span><span class="skeleton-line"></span></div>`;
+    } else {
+      list.innerHTML = `<div class="empty-state"><p>SIN HÁBITOS — AGREGA UNO ABAJO</p></div>`;
+    }
     document.getElementById('sectionCount').textContent = '0 HÁBITOS';
     return;
   }
@@ -1486,14 +1501,23 @@ async function saveEdit() {
   if (!name) return;
   const category = document.getElementById('editCategory').value;
   const habit = state.habits.find(h => h.id === editingId);
-  if (habit) {
-    habit.name = name;
-    habit.category = category;
-    sb.from('habits').update({ name, category }).eq('id', editingId);
+  if (!habit) { closeEdit(); return; }
+  const prevName = habit.name;
+  const prevCat  = habit.category;
+  habit.name = name;
+  habit.category = category;
+  closeEdit();
+  render();
+  const { error } = await sb.from('habits').update({ name, category }).eq('id', editingId);
+  if (error) {
+    console.error('habits update:', error);
+    habit.name = prevName;
+    habit.category = prevCat;
     render();
+    showToast('Error al actualizar');
+  } else {
     showToast('Hábito actualizado');
   }
-  closeEdit();
 }
 
 /* ─── ADD HABIT ──────────────────────────────────────────── */
