@@ -1,9 +1,10 @@
-const CACHE_NAME = 'habitos-v1';
+const CACHE_NAME = 'habitos-v2';
 const ASSETS = [
   '/',
   '/index.html',
   '/manifest.json',
-  'https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Playfair+Display:wght@400;900&display=swap'
+  'https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Playfair+Display:wght@400;900&display=swap',
+  'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js'
 ];
 
 // Install: cache core assets

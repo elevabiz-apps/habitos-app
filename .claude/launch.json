@@ -3,8 +3,8 @@
   "configurations": [
     {
       "name": "Static Server (npx serve)",
-      "runtimeExecutable": "npx",
-      "runtimeArgs": ["serve", ".", "--listen", "3000", "--no-clipboard"],
+      "runtimeExecutable": "/usr/local/bin/node",
+      "runtimeArgs": ["server.py"],
       "port": 3000
     },
     {

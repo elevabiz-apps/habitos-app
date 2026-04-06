@@ -556,6 +556,18 @@
       color: var(--lime);
     }
 
+    /* ─── HEATMAP NAV ───────────────────────────────────────── */
+    .heatmap-nav {
+      font-size: 0.7rem;
+      color: var(--muted);
+      border: 1px solid var(--border);
+      padding: 0.1rem 0.45rem;
+      transition: color 0.15s, border-color 0.15s;
+      line-height: 1.6;
+    }
+    .heatmap-nav:hover { color: var(--text); border-color: var(--muted); }
+    .heatmap-nav:disabled { opacity: 0.2; cursor: default; }
+
     /* ─── FOOTER ─────────────────────────────────────────── */
     footer {
       margin-top: 4rem;
@@ -571,6 +583,17 @@
       color: var(--muted);
       text-transform: uppercase;
     }
+    #exportBtn {
+      font-size: 0.5rem;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      border: 1px solid var(--border);
+      padding: 0.2rem 0.5rem;
+      transition: color 0.15s, border-color 0.15s;
+      text-transform: uppercase;
+      margin-left: 1rem;
+    }
+    #exportBtn:hover { color: var(--text); border-color: var(--muted); }
     .progress-bar-wrap {
       flex: 1;
       height: 2px;
@@ -1042,7 +1065,11 @@
   <div class="monthly-section">
     <div class="section-header" style="margin-bottom:0">
       <h2 class="section-title">MES</h2>
-      <span class="section-count" id="heatmapMonthLabel"></span>
+      <div style="display:flex;align-items:center;gap:0.5rem">
+        <button class="heatmap-nav" id="heatmapPrev" title="Mes anterior">&#8592;</button>
+        <span class="section-count" id="heatmapMonthLabel"></span>
+        <button class="heatmap-nav" id="heatmapNext" title="Mes siguiente">&#8594;</button>
+      </div>
     </div>
     <div id="heatmapGrid"></div>
   </div>
@@ -1054,6 +1081,7 @@
       <div class="progress-bar-fill" id="progressFill" style="width:0%"></div>
     </div>
     <span id="progressLabel">0 / 0</span>
+    <button id="exportBtn" title="Exportar datos">&#8595; CSV</button>
   </footer>
 
 </div>
@@ -1154,6 +1182,7 @@ function todayKey() {
 /* ─── AUTH UI ────────────────────────────────────────────── */
 let authMode = 'login';
 let activeCatFilter = 'all';
+let heatmapOffset = 0; // 0 = current month, -1 = last month, etc.
 
 function showAuthPanel() {
   const overlay = document.getElementById('authOverlay');
@@ -1287,7 +1316,7 @@ async function loadDataFromSupabase() {
       sb.from('habit_logs').select('*').eq('user_id', userId),
       sb.from('best_streaks').select('*').eq('user_id', userId),
     ]);
-    state.habits = (habits || []).map(h => ({ id: h.id, name: h.name, category: h.category }));
+    state.habits = (habits || []).map(h => ({ id: h.id, name: h.name, category: h.category, createdAt: h.created_at }));
     applyHabitOrder(); // restore user-defined sort from localStorage
     state.log = {};
     (logs || []).forEach(l => {
@@ -1341,17 +1370,16 @@ function getStreak(habitId) {
 function getWeeklyRate() {
   if (state.habits.length === 0) return 0;
   const keys = Array.from({ length: 7 }, (_, i) => dateKey(i - 6));
-  // For each day, count only habits that existed by then (use total habits as approx)
-  const total = keys.length * state.habits.length;
-  if (total === 0) return 0;
   let done = 0;
+  let total = 0;
   keys.forEach(k => {
+    // Only count habits that existed on or before this day
+    const habitsOnDay = state.habits.filter(h => !h.createdAt || h.createdAt.slice(0, 10) <= k);
+    total += habitsOnDay.length;
     const dayLog = state.log[k] || [];
-    // Only count completions for habits that still exist
-    const validDone = dayLog.filter(id => state.habits.some(h => h.id === id));
-    done += validDone.length;
+    done += dayLog.filter(id => habitsOnDay.some(h => h.id === id)).length;
   });
-  return Math.round((done / total) * 100);
+  return total === 0 ? 0 : Math.round((done / total) * 100);
 }
 
 function getLongestStreak() {
@@ -1514,13 +1542,18 @@ function renderHeatmap() {
   container.innerHTML = '';
 
   const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth();
+  const target = new Date(now.getFullYear(), now.getMonth() + heatmapOffset, 1);
+  const year = target.getFullYear();
+  const month = target.getMonth();
   const total = state.habits.length;
 
   // Label
   document.getElementById('heatmapMonthLabel').textContent =
     `${MONTHS_ES[month]} ${year}`;
+
+  // Disable next button if already on current month
+  const nextBtn = document.getElementById('heatmapNext');
+  if (nextBtn) nextBtn.disabled = heatmapOffset >= 0;
 
   // Day-of-week headers (starting Monday)
   const dayLabels = ['LUN','MAR','MIÉ','JUE','VIE','SÁB','DOM'];
@@ -1808,6 +1841,37 @@ function applyHabitOrder() {
 }
 
 
+/* ─── HEATMAP NAVIGATION ─────────────────────────────────── */
+document.getElementById('heatmapPrev').addEventListener('click', () => {
+  heatmapOffset--;
+  renderHeatmap();
+});
+document.getElementById('heatmapNext').addEventListener('click', () => {
+  if (heatmapOffset < 0) { heatmapOffset++; renderHeatmap(); }
+});
+
+/* ─── EXPORT DATA ─────────────────────────────────────────── */
+document.getElementById('exportBtn').addEventListener('click', () => {
+  if (!currentUser || state.habits.length === 0) { showToast('Sin datos para exportar'); return; }
+  const rows = [['fecha','habito','categoria','completado']];
+  const allDates = Object.keys(state.log).sort();
+  state.habits.forEach(h => {
+    allDates.forEach(date => {
+      const done = (state.log[date] || []).includes(h.id) ? '1' : '0';
+      rows.push([date, `"${h.name.replace(/"/g,'""')}"`, h.category, done]);
+    });
+  });
+  const csv = rows.map(r => r.join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `habitos-${todayKey()}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('Datos exportados');
+});
+
 /* ─── CATEGORY FILTER ────────────────────────────────────── */
 document.getElementById('catFilters').addEventListener('click', e => {
   const btn = e.target.closest('[data-filter]');
@@ -1824,18 +1888,37 @@ document.getElementById('addInput').addEventListener('keydown', e => {
   if (e.key === 'Enter') addHabit();
 });
 
+let _isAdding = false;
 async function addHabit() {
+  if (_isAdding) return;
   const input = document.getElementById('addInput');
   const name  = input.value.trim();
   if (!name) { input.focus(); return; }
-  const category = document.getElementById('addCategory').value;
-  const id = uid();
-  state.habits.push({ id, name, category });
-  const { error } = await sb.from('habits').insert({ id, name, category, user_id: currentUser.id });
-  if (error) console.error('habits insert:', error);
-  input.value = '';
-  render();
-  showToast('Hábito agregado');
+  const btn = document.getElementById('addBtn');
+  _isAdding = true;
+  btn.disabled = true;
+  btn.textContent = '...';
+  try {
+    const category = document.getElementById('addCategory').value;
+    const id = uid();
+    state.habits.push({ id, name, category, createdAt: new Date().toISOString() });
+    input.value = '';
+    render();
+    const { error } = await sb.from('habits').insert({ id, name, category, user_id: currentUser.id });
+    if (error) {
+      console.error('habits insert:', error);
+      state.habits = state.habits.filter(h => h.id !== id);
+      render();
+      showToast('Error al agregar');
+    } else {
+      saveHabitOrder();
+      showToast('Hábito agregado');
+    }
+  } finally {
+    _isAdding = false;
+    btn.disabled = false;
+    btn.textContent = 'AGREGAR';
+  }
 }
 
 /* ─── AUTO-REFRESH AT MIDNIGHT ───────────────────────────── */
